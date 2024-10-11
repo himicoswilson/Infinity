@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct CoupleProfileView: View {
     @StateObject private var viewModel = CoupleViewModel()
@@ -82,21 +83,13 @@ struct UserInfoView: View {
     var body: some View {
         VStack {
             if let avatarURL = user.avatar {
-                AsyncImage(url: URL(string: avatarURL)) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 80, height: 80)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white, lineWidth: 3))
-                        .shadow(radius: 3)
-                } placeholder: {
-                    SwiftUI.Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(.gray)
-                }
+                KFImage(URL(string: avatarURL))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 80, height: 80)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white, lineWidth: 3))
+                    .shadow(radius: 3)
             } else {
                 SwiftUI.Image(systemName: "person.circle.fill")
                     .resizable()

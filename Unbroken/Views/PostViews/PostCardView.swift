@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct PostCardView: View {
     let postdto: PostDTO
@@ -9,24 +10,19 @@ struct PostCardView: View {
         VStack(alignment: .leading, spacing: 10) {
             // 头像 昵称 内容 时间
             HStack(alignment: .top) {
-                if let avatarURL = postdto.userAvatar, let url = URL(string: avatarURL) {
-                    AsyncImage(url: url) { image in
-                        image
+                ZStack {
+                    // 加载的头像图片
+                    if let avatarURL = postdto.userAvatar, let url = URL(string: avatarURL) {
+                        KFImage(url)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 50, height: 50)
                             .clipShape(Circle())
-                    } placeholder: {
-                        // 占位符，如果图像尚未加载
+                    } else {
                         Circle()
                             .fill(Color.gray)
                             .frame(width: 50, height: 50)
                     }
-                } else {
-                    // 如果没有头像URL，显示灰色的圆形占位符
-                    Circle()
-                        .fill(Color.gray)
-                        .frame(width: 50, height: 50)
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
@@ -54,35 +50,15 @@ struct PostCardView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(postdto.images, id: \.id) { image in
-                            AsyncImage(url: URL(string: image.imageURL)) { phase in
-                                switch phase {
-                                case .empty:
-                                    Rectangle()
-                                        .fill(Color.gray)
-                                        .frame(width: 200, height: 250)
-                                        .cornerRadius(10)
-                                case .success(let uiImage):
-                                    uiImage
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 200, height: 250)
-                                        .cornerRadius(10)
-                                        .onTapGesture {
-                                            selectedImageURL = image.imageURL
-                                            showImagePreview = true
-                                        }
-                                case .failure:
-                                    Rectangle()
-                                        .fill(Color.gray)
-                                        .frame(width: 200, height: 250)
-                                        .cornerRadius(10)
-                                @unknown default:
-                                    Rectangle()
-                                        .fill(Color.gray)
-                                        .frame(width: 200, height: 250)
-                                        .cornerRadius(10)
+                            KFImage(URL(string: image.imageURL))
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 200, height: 250)
+                                .cornerRadius(10)
+                                .onTapGesture {
+                                    selectedImageURL = image.imageURL
+                                    showImagePreview = true
                                 }
-                            }
                         }
                     }
                     .padding(.leading, 73)
@@ -91,17 +67,17 @@ struct PostCardView: View {
             }
             .padding(.vertical, 5)
 
-            // Location and Tags Section
-            if postdto.locationID != nil || !postdto.tags.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LocationAndTagsView(location: postdto.locationID == nil ? nil : "Location \(postdto.locationID!)", tags: postdto.tags)
-                            .padding(.leading, 73)
-                            .padding(.trailing, 10)
-                    }
-                }
-                .padding(.vertical, 5)
-            }
+            // // Location and Tags Section
+            // if postdto.locationID != nil || !postdto.tags.isEmpty {
+            //     VStack(alignment: .leading, spacing: 10) {
+            //         ScrollView(.horizontal, showsIndicators: false) {
+            //             LocationAndTagsView(location: postdto.locationID == nil ? nil : "Location \(postdto.locationID!)", tags: postdto.tags)
+            //                 .padding(.leading, 73)
+            //                 .padding(.trailing, 10)
+            //         }
+            //     }
+            //     .padding(.vertical, 5)
+            // }
         }
         .sheet(isPresented: $showImagePreview) {
             if let imageURL = selectedImageURL {
@@ -154,7 +130,7 @@ func timeAgo(from dateString: String) -> String {
     } else if let month = components.month, month > 0 {
         return "\(month)个月前"
     } else if let day = components.day, day > 0 {
-        return "\(day)天前"
+        return "\(day)天"
     } else if let hour = components.hour, hour > 0 {
         return "\(hour)小时前"
     } else if let minute = components.minute, minute > 0 {
