@@ -16,6 +16,7 @@ struct Constants {
         static let login = "\(baseURL)/users/login"
         static let register = "\(baseURL)/users/register"
         static let users = "\(baseURL)/users"
+        static let uploadUserAvatar = { (userId: Int) in "\(baseURL)/users/\(userId)/avatar" }
         
         // 帖子相关 API
         static let posts = "\(baseURL)/posts"
@@ -23,6 +24,7 @@ struct Constants {
         
         // 情侣相关 API
         static let coupleInfo = "\(baseURL)/couples/user/"
+        static let uploadCoupleBackground = { (coupleId: Int) in "\(baseURL)/couples/\(coupleId)" }
         
         // 人物和宠物 API
         static let entities = "\(baseURL)/entities"

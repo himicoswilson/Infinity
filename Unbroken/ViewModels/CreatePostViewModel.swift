@@ -91,9 +91,14 @@ class CreatePostViewModel: ObservableObject {
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
-        let token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJIaSIsImlhdCI6MTcyODYxMjkzNSwiZXhwIjoxODE1MDEyOTM1fQ._cRYagUKzxSL2u5R84ZzZ_V6FgSSmQAvFYCjIxR-hlk"
-        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
+        // 添加token到请求头
+        if let token = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.token) {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            print("无法获取token")
+            return
+        }
+
         var body = Data()
         
         // 添加内容
@@ -102,12 +107,12 @@ class CreatePostViewModel: ObservableObject {
         body.append("\(content)\r\n".data(using: .utf8)!)
         
         // 添加标签
-        let tags = [["tagID": 1], ["tagID": 2]] // 示例标签，需要根据实际情况修改
-        let tagsData = try? JSONEncoder().encode(tags)
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"tags\"\r\n\r\n".data(using: .utf8)!)
-        body.append(tagsData ?? Data())
-        body.append("\r\n".data(using: .utf8)!)
+//        let tags = [["tagID": 1], ["tagID": 2]] // 示例标签，需要根据实际情况修改
+//        let tagsData = try? JSONEncoder().encode(tags)
+//        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+//        body.append("Content-Disposition: form-data; name=\"tags\"\r\n\r\n".data(using: .utf8)!)
+//        body.append(tagsData ?? Data())
+//        body.append("\r\n".data(using: .utf8)!)
         
         // 添加实体
         let entitiesData = selectedEntities.map { ["entityID": $0] }
