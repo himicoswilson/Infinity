@@ -44,4 +44,20 @@ class CoupleViewModel: ObservableObject {
         }
         print("获取信息错误: \(self.errorMessage ?? "未知错误")")
     }
+
+    var currentUser: User {
+        let currentUserId = UserDefaults.standard.integer(forKey: Constants.UserDefaultsKeys.userID)
+        guard currentUserId != 0 else {
+            fatalError("当前用户ID不存在")
+        }
+        return currentUserId == user1?.userID ? user1! : user2!
+    }
+
+    var lover: User {
+        let currentUserId = UserDefaults.standard.integer(forKey: Constants.UserDefaultsKeys.userID)
+        guard currentUserId != 0 else {
+            fatalError("当前用户ID不存在")
+        }
+        return currentUserId == user1?.userID ? user2! : user1!
+    }
 }

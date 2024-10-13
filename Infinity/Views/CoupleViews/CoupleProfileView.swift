@@ -8,7 +8,7 @@ struct CoupleProfileView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if let couple = viewModel.couple, let user1 = viewModel.user1, let user2 = viewModel.user2 {
+            if let couple = viewModel.couple, let _ = viewModel.user1, let _ = viewModel.user2 {
                 // 背景图片
                 Button(action: {
                     showImagePicker = true
@@ -31,13 +31,13 @@ struct CoupleProfileView: View {
                 }
                 
                 HStack(spacing: 20) {
-                    UserInfoView(user: user1)
+                    UserInfoView(user: viewModel.currentUser)
                     
                     SwiftUI.Image(systemName: "heart.fill")
                         .foregroundColor(SwiftUI.Color.red)
                         .font(SwiftUI.Font.system(size: 40))
                     
-                    UserInfoView(user: user2)
+                    UserInfoView(user: viewModel.lover)
                 }
                 .padding()
                 .offset(y: -30)

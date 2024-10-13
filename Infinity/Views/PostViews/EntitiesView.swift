@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct EntitiesView: View {
     @ObservedObject var viewModel: EntitiesViewModel
@@ -15,17 +16,16 @@ struct EntitiesView: View {
                         ForEach(viewModel.entities, id: \.id) { entity in
                             VStack {
                                 if let avatarURL = entity.avatar, let url = URL(string: avatarURL) {
-                                    AsyncImage(url: url) { image in
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                            .frame(width: 70, height: 70)
-                                            .clipShape(Circle())
-                                    } placeholder: {
-                                        Circle()
-                                            .fill(Color.gray)
-                                            .frame(width: 70, height: 70)
-                                    }
+                                    KFImage(url)
+                                        .resizable()
+                                        .placeholder {
+                                            Circle()
+                                                .fill(Color.gray)
+                                                .frame(width: 70, height: 70)
+                                        }
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 70, height: 70)
+                                        .clipShape(Circle())
                                 } else {
                                     Circle()
                                         .fill(Color.gray)
