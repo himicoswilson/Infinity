@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct UnbrokenApp: App {
+struct InfinityApp: App {
     var body: some Scene {
         WindowGroup {
             MainView()

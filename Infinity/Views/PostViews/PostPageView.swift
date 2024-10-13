@@ -7,7 +7,7 @@ struct PostPageView: View {
     var body: some View {
         VStack(alignment: .leading) {
             // Title Section
-            Text("Unbroken")
+            Text("Infinity")
                 .font(.title)
                 .fontWeight(.bold)
                 .padding(.horizontal)
