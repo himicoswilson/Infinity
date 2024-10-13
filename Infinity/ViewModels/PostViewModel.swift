@@ -27,9 +27,10 @@ class PostViewModel: ObservableObject {
                 let endpoint = "\(Constants.APIEndpoints.posts)?page=\(currentPage)&limit=\(postsPerPage)"
                 let fetchedPosts: [PostDTO] = try await APIService.shared.fetch(endpoint)
                 if refresh {
-                    self.posts = fetchedPosts
+                    self.posts = fetchedPosts.map { var post = $0; post.updateRelativeTime(); return post }
                 } else {
-                    self.posts.append(contentsOf: fetchedPosts)
+                    let updatedPosts = fetchedPosts.map { var post = $0; post.updateRelativeTime(); return post }
+                    self.posts.append(contentsOf: updatedPosts)
                 }
                 self.currentPage += 1
                 self.hasMorePosts = fetchedPosts.count == postsPerPage

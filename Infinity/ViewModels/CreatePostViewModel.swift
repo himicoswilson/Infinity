@@ -7,6 +7,7 @@ class CreatePostViewModel: ObservableObject {
     @Published var content: String = ""
     @Published var selectedImages: [UIImage] = []
     @Published var entities: [Entity] = []
+//    private let entitiesViewModel: EntitiesViewModel
     @Published var selectedEntities: [Int] = []
     @Published var isAllSelected: Bool = false
     @Published var errorMessage: String?
@@ -14,6 +15,10 @@ class CreatePostViewModel: ObservableObject {
     @Published var postCreated: Bool = false
 
     private let maxImageCount = 20
+
+    init(entities: [EntityDTO]) {
+        self.entities = entities.map(convertToEntity)
+    }
     
     func addImages(_ images: [UIImage]) {
         let remainingSlots = maxImageCount - selectedImages.count
@@ -43,19 +48,18 @@ class CreatePostViewModel: ObservableObject {
         }
     }
 
-    func fetchEntities() {
-        Task {
-            do {
-                let fetchedEntities: [Entity] = try await APIService.shared.fetch(Constants.APIEndpoints.entities)
-                await MainActor.run {
-                    self.entities = fetchedEntities
-                }
-            } catch let error as APIError {
-                await MainActor.run {
-                    handleError(error)
-                }
-            }
-        }
+    func refreshEntities(_ entities: [EntityDTO]) {
+        self.entities = entities.map(convertToEntity)
+    }
+    
+    private func convertToEntity(_ entityDTO: EntityDTO) -> Entity {
+        return Entity(
+            entityID: entityDTO.entityID,
+            entityName: entityDTO.entityName,
+            entityType: entityDTO.entityType,
+            avatar: entityDTO.avatar,
+            coupleID: entityDTO.coupleID
+        )
     }
     
     private func handleError(_ error: APIError) {

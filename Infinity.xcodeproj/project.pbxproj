@@ -18,7 +18,7 @@
 		8A52E6012CBA80C900713A56 /* .gitattributes */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitattributes; sourceTree = "<group>"; };
 		8A52E6022CBA80C900713A56 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		8A52E6042CBA80C900713A56 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		8A885D122CBB62EB001B32AF /* Infinity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Infinity.app; path = "/Users/himicos/Desktop/Swift/Infinity/build/Debug-iphoneos/Infinity.app"; sourceTree = "<absolute>"; };
+		8A885DE02CBBDDD3001B32AF /* Infinity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Infinity.app; path = "/Users/himicos/Desktop/Swift/Infinity/build/Debug-iphoneos/Infinity.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -79,7 +79,7 @@
 				8A0ECDE02CB9E9EA00F1966C /* Kingfisher */,
 			);
 			productName = Unbroken;
-			productReference = 8A885D122CBB62EB001B32AF /* Infinity.app */;
+			productReference = 8A885DE02CBBDDD3001B32AF /* Infinity.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

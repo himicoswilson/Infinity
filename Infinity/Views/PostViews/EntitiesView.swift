@@ -3,7 +3,6 @@ import Kingfisher
 
 struct EntitiesView: View {
     @ObservedObject var viewModel: EntitiesViewModel
-    @State private var hasAppeared = false
 
     var body: some View {
         VStack {
@@ -45,12 +44,6 @@ struct EntitiesView: View {
                         }
                     }
                 }
-            }
-        }
-        .onAppear {
-            if !hasAppeared {
-                viewModel.fetchEntities()
-                hasAppeared = true
             }
         }
     }

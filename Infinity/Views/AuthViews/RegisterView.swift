@@ -5,7 +5,7 @@ struct RegisterView: View {
     @State private var username = ""
     @State private var password = ""
     @State private var email = ""
-    @State private var isAnimating = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         ZStack {
@@ -52,6 +52,7 @@ struct RegisterView: View {
             .padding()
         }
         .navigationBarTitle("注册", displayMode: .inline)
+        .preferredColorScheme(colorScheme) // 确保整个视图遵循系统颜色方案
     }
 }
 

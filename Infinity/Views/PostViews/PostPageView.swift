@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct PostPageView: View {
-    @ObservedObject var viewModel = PostViewModel()
-    @StateObject private var entitiesViewModel = EntitiesViewModel()
+    @StateObject private var viewModel = PostViewModel()
+    @StateObject private var entitiesViewModel: EntitiesViewModel
+    
+    init(entitiesViewModel: EntitiesViewModel) {
+        _entitiesViewModel = StateObject(wrappedValue: entitiesViewModel)
+    }
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -48,7 +52,7 @@ struct PostPageView: View {
                 }
             }
             .refreshable {
-                await refreshData()
+                refreshData()
             }
         }
         .padding(.bottom, 10)
@@ -56,10 +60,13 @@ struct PostPageView: View {
             if viewModel.posts.isEmpty {
                 viewModel.fetchPosts()
             }
+            if entitiesViewModel.entities.isEmpty  {
+                entitiesViewModel.fetchEntities()
+            }
         }
     }
     
-    func refreshData() async {
+    func refreshData() {
         viewModel.fetchPosts(refresh: true)
         entitiesViewModel.fetchEntities()
     }

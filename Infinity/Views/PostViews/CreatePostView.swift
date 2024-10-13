@@ -1,14 +1,24 @@
 import SwiftUI
 import PhotosUI
+import Kingfisher
 
 struct CreatePostView: View {
     static private let MAX_IMAGE_COUNT = 20
     
     @Binding var showCreatePost: Bool
-    @StateObject private var viewModel = CreatePostViewModel()
+    @ObservedObject var entitiesViewModel: EntitiesViewModel
+    @StateObject private var viewModel: CreatePostViewModel
     @State private var photoList: [PhotosPickerItem] = []
     @FocusState private var focusedField: Bool
     @State private var showCreateEntityView = false
+    @Environment(\.colorScheme) var colorScheme
+
+    init(showCreatePost: Binding<Bool>, entitiesViewModel: EntitiesViewModel) {
+        _showCreatePost = showCreatePost
+        self.entitiesViewModel = entitiesViewModel
+        _viewModel = StateObject(wrappedValue: CreatePostViewModel(entities: entitiesViewModel.entities))
+        print("CreatePostView 初始化时的实体数量: \(entitiesViewModel.entities.count)")
+    }
     
     var body: some View {
         VStack {
@@ -136,9 +146,9 @@ struct CreatePostView: View {
                 }
                 .padding(.horizontal)
             }
-        }
-        .onAppear {
-            viewModel.fetchEntities()
+            .onReceive(entitiesViewModel.$entities) { newEntities in
+                viewModel.refreshEntities(newEntities)
+            }
         }
     }
 }
@@ -147,22 +157,20 @@ struct EntityItemView: View {
     let entity: Entity
     let isSelected: Bool
     let onTap: () -> Void
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(alignment: .center, spacing: 5) {
             if let avatarURL = entity.avatar, let url = URL(string: avatarURL) {
-                AsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 72, height: 72)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                } placeholder: {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(width: 72, height: 72)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
+                KFImage(url)
+                    .resizable()
+                    .placeholder {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                    }
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 72, height: 72)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
             } else {
                 Rectangle()
                     .fill(Color.gray.opacity(0.2))
@@ -176,7 +184,7 @@ struct EntityItemView: View {
                     .foregroundColor(isSelected ? .blue : .gray)
                 Text(entity.entityName)
                     .font(.caption)
-                    .foregroundColor(.primary)
+                    .foregroundColor(colorScheme == .dark ? .white : .primary)
             }
         }
         .frame(width: 72)
