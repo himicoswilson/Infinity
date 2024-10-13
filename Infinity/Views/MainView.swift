@@ -13,7 +13,7 @@ struct MainView: View {
                     TabView(selection: $selectedTab) {
                         PostPageView()
                             .tabItem {
-                                SwiftUI.Image(systemName: "house.fill")
+                                SwiftUI.Image(systemName: "seal.fill")
                                     .resizable()
                                     .scaledToFit()
                             }
