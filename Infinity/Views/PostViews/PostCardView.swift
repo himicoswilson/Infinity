@@ -26,7 +26,7 @@ struct PostCardView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(postdto.nickName)
+                    Text(postdto.nickName ?? postdto.userName)
                         .font(.headline)
                         .padding(.top, 2)
                     
@@ -116,7 +116,7 @@ struct LocationAndTagsView: View {
 func timeAgo(from dateString: String) -> String {
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-    dateFormatter.timeZone = TimeZone(secondsFromGMT: 8*3600)
+    dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
     
     guard let date = dateFormatter.date(from: dateString) else {
         return "未知时间"

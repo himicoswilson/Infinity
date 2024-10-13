@@ -18,12 +18,14 @@ struct CoupleProfileView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(height: 300)
+                            .clipped() // 添加这行来裁剪溢出的部分
                     } else {
                         Rectangle()
                             .fill(Color.gray.opacity(0.3))
                             .frame(height: 300)
                     }
                 }
+                .frame(maxWidth: .infinity) // 确保按钮占据全宽
                 .sheet(isPresented: $showImagePicker) {
                     ImagePicker(image: $selectedBackgroundImage, completion: uploadBackgroundImage)
                 }
@@ -75,20 +77,13 @@ struct CoupleProfileView: View {
         }
         
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month, .day], from: startDate, to: Date())
+        let components = calendar.dateComponents([.day], from: startDate, to: Date())
         
-        var result = ""
-        if let years = components.year, years > 0 {
-            result += "\(years) 年 "
-        }
-        if let months = components.month, months > 0 {
-            result += "\(months) 个月 "
-        }
-        if let days = components.day, days > 0 {
-            result += "\(days) 天"
+        guard let days = components.day else {
+            return "计算错误"
         }
         
-        return result.isEmpty ? "不到一天" : result
+        return "\(days) 天"
     }
     
     private func uploadBackgroundImage() {
@@ -181,7 +176,7 @@ struct UserInfoView: View {
                 ImagePicker(image: $selectedImage, completion: uploadAvatar)
             }
             
-            SwiftUI.Text(user.nickName)
+            SwiftUI.Text(user.nickName ?? user.userName)
                 .font(.headline)
         }
     }

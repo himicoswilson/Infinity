@@ -4,7 +4,7 @@ struct PostDTO: Identifiable, Codable {
     let content: String
     let userID: Int
     let userName: String
-    let nickName: String
+    let nickName: String?
     let userAvatar: String?
     let coupleID: Int
     let locationID: Int?

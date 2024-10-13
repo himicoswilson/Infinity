@@ -3,7 +3,7 @@ struct Constants {
     static let appVersion = "1.0.0"
     
     // 定义基础 URL
-    static let baseURL = "http://localhost:8080/api"
+    static let baseURL = "https://love.ytcccc.com/api"
 
     struct UserDefaultsKeys {
         static let token = "token"
