@@ -61,7 +61,7 @@ struct MainView: View {
                 .opacity(opacity)
                 .animation(.easeInOut(duration: 0.5), value: opacity)
                 .sheet(isPresented: $showCreatePost) {
-                    CreatePostView(showCreatePost: $showCreatePost, entitiesViewModel: entitiesViewModel)
+                    CreatePostView(showCreatePost: $showCreatePost, entitiesViewModel: entitiesViewModel, onPostCreated: refreshMainView)
                 }
             } else {
                 LoginView(viewModel: authViewModel)
@@ -92,7 +92,13 @@ struct MainView: View {
     func loadInitialData() async {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await entitiesViewModel.fetchEntities() }
-            group.addTask { await postViewModel.fetchPosts() }
+            group.addTask { await postViewModel.fetchPosts(refresh: true) }
+        }
+    }
+
+    func refreshMainView() {
+        Task {
+            await loadInitialData()
         }
     }
 }

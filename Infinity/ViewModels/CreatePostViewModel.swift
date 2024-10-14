@@ -7,17 +7,20 @@ class CreatePostViewModel: ObservableObject {
     @Published var content: String = ""
     @Published var selectedImages: [UIImage] = []
     @Published var entities: [Entity] = []
-//    private let entitiesViewModel: EntitiesViewModel
     @Published var selectedEntities: [Int] = []
     @Published var isAllSelected: Bool = false
     @Published var errorMessage: String?
     @Published var isLoading: Bool = false
     @Published var postCreated: Bool = false
+    @Published var showError: Bool = false
 
     private let maxImageCount = 20
 
-    init(entities: [EntityDTO]) {
+    var onPostCreated: (() -> Void)?
+
+    init(entities: [EntityDTO], onPostCreated: @escaping () -> Void) {
         self.entities = entities.map(convertToEntity)
+        self.onPostCreated = onPostCreated
     }
     
     func addImages(_ images: [UIImage]) {
@@ -82,6 +85,7 @@ class CreatePostViewModel: ObservableObject {
     
     func createPost() {
         isLoading = true
+        showError = false
         
         guard let url = URL(string: Constants.APIEndpoints.posts) else {
             self.errorMessage = "无效的URL"
@@ -147,18 +151,21 @@ class CreatePostViewModel: ObservableObject {
                 
                 if let error = error {
                     self.errorMessage = "网络错误: \(error.localizedDescription)"
+                    self.showError = true
                     print("网络请求错误: \(error)")
                     return
                 }
                 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     self.errorMessage = "无效的响应"
+                    self.showError = true
                     print("无效的响应: \(String(describing: response))")
                     return
                 }
                 
                 guard (200...299).contains(httpResponse.statusCode) else {
                     self.errorMessage = "服务器错误: \(httpResponse.statusCode)"
+                    self.showError = true
                     print("服务器错误: 状态码 \(httpResponse.statusCode)")
                     return
                 }
@@ -170,6 +177,7 @@ class CreatePostViewModel: ObservableObject {
                 print("发送成功")
                 self.postCreated = true
                 self.resetState()
+                self.onPostCreated?()
             }
         }.resume()
     }

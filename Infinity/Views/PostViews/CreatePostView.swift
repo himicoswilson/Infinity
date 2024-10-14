@@ -13,11 +13,10 @@ struct CreatePostView: View {
     @State private var showCreateEntityView = false
     @Environment(\.colorScheme) var colorScheme
 
-    init(showCreatePost: Binding<Bool>, entitiesViewModel: EntitiesViewModel) {
+    init(showCreatePost: Binding<Bool>, entitiesViewModel: EntitiesViewModel, onPostCreated: @escaping () -> Void) {
         _showCreatePost = showCreatePost
         self.entitiesViewModel = entitiesViewModel
-        _viewModel = StateObject(wrappedValue: CreatePostViewModel(entities: entitiesViewModel.entities))
-        print("CreatePostView 初始化时的实体数量: \(entitiesViewModel.entities.count)")
+        _viewModel = StateObject(wrappedValue: CreatePostViewModel(entities: entitiesViewModel.entities, onPostCreated: onPostCreated))
     }
     
     var body: some View {
@@ -36,9 +35,6 @@ struct CreatePostView: View {
                 Spacer()
                 Button("发布") {
                     viewModel.createPost()
-                    withAnimation {
-                        self.showCreatePost = false
-                    }
                 }
                 .bold()
                 .foregroundStyle(.white)
@@ -46,6 +42,7 @@ struct CreatePostView: View {
                 .padding(.vertical, 6)
                 .background(Color.blue)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+                .disabled(viewModel.isLoading)
             }
             .padding(.horizontal)
             
@@ -56,6 +53,7 @@ struct CreatePostView: View {
                     .padding()
                     .focused($focusedField)
                 
+                // 图片选择器和预览
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 15) {
                         ForEach(viewModel.selectedImages, id: \.self) { image in
@@ -117,6 +115,7 @@ struct CreatePostView: View {
                 Divider()
                     .padding()
                 
+                // 实体选择
                 VStack {
                     HStack {
                         Text("关联实体")
@@ -148,6 +147,38 @@ struct CreatePostView: View {
             }
             .onReceive(entitiesViewModel.$entities) { newEntities in
                 viewModel.refreshEntities(newEntities)
+            }
+        }
+        .overlay(
+            Group {
+                if viewModel.isLoading {
+                    ProgressView("发布中...")
+                        .padding()
+                        .background(Color(UIColor.systemBackground))
+                        .cornerRadius(10)
+                } else if viewModel.showError {
+                    VStack {
+                        Text("发布失败")
+                            .font(.headline)
+                        Text(viewModel.errorMessage ?? "未知错误")
+                            .font(.subheadline)
+                        Button("重新发送") {
+                            viewModel.createPost()
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .padding()
+                    .background(Color(UIColor.systemBackground))
+                    .cornerRadius(10)
+                }
+            }
+        )
+        .onChange(of: viewModel.postCreated) { created in
+            if created {
+                self.showCreatePost = false
             }
         }
     }
