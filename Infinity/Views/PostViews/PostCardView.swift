@@ -7,7 +7,7 @@ struct PostCardView: View {
     @State private var showImagePreview = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 0) {
             // 头像 昵称 内容 时间
             HStack(alignment: .top) {
                 ZStack {
@@ -30,9 +30,11 @@ struct PostCardView: View {
                         .font(.headline)
                         .padding(.top, 2)
                     
-                    Text(postdto.content)
-                        .font(.body)
-                        .padding(.trailing, -50)
+                    if postdto.hasContent {
+                        Text(postdto.content)
+                            .font(.body)
+                            .padding(.trailing, -50)
+                    }
                 }
                 
                 Spacer()
@@ -46,38 +48,28 @@ struct PostCardView: View {
             .padding(.top, 5)
             
             // 图片
-            VStack(alignment: .leading, spacing: 10) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(postdto.images, id: \.id) { image in
-                            KFImage(URL(string: image.imageURL))
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 200, height: 250)
-                                .cornerRadius(10)
-                                .onTapGesture {
-                                    selectedImageURL = image.imageURL
-                                    showImagePreview = true
-                                }
+            if !postdto.images.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(postdto.images, id: \.id) { image in
+                                KFImage(URL(string: image.imageURL))
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 200, height: 250)
+                                    .cornerRadius(10)
+                                    .onTapGesture {
+                                        selectedImageURL = image.imageURL
+                                        showImagePreview = true
+                                    }
+                            }
                         }
+                        .padding(.leading, 73)
+                        .padding(.trailing, 10)
                     }
-                    .padding(.leading, 73)
-                    .padding(.trailing, 10)
                 }
+                .padding(.vertical, 5)
             }
-            .padding(.vertical, 5)
-
-            // // Location and Tags Section
-            // if postdto.locationID != nil || !postdto.tags.isEmpty {
-            //     VStack(alignment: .leading, spacing: 10) {
-            //         ScrollView(.horizontal, showsIndicators: false) {
-            //             LocationAndTagsView(location: postdto.locationID == nil ? nil : "Location \(postdto.locationID!)", tags: postdto.tags)
-            //                 .padding(.leading, 73)
-            //                 .padding(.trailing, 10)
-            //         }
-            //     }
-            //     .padding(.vertical, 5)
-            // }
         }
         .sheet(isPresented: $showImagePreview) {
             if let imageURL = selectedImageURL {

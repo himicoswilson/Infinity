@@ -20,6 +20,10 @@ struct PostDTO: Identifiable, Codable {
     let deleted: Bool
     
     var relativeTime: String?
+
+    var hasContent: Bool {
+        return !content.isEmpty
+    }
     
     mutating func updateRelativeTime() {
         self.relativeTime = DateHelper.timeAgo(from: createdAt)

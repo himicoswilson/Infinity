@@ -34,18 +34,29 @@ struct PostPageView: View {
                         Text("没有可用的帖子")
                             .padding()
                     } else {
-                        ForEach(postViewModel.posts, id: \.id) { post in
-                            PostCardView(postdto: post)
-                                .onAppear {
-                                    if post.id == postViewModel.posts.last?.id {
-                                        postViewModel.fetchPosts()
+                        VStack(spacing: 25) {
+                            ForEach(postViewModel.posts, id: \.id) { post in
+                                PostCardView(postdto: post)
+                                    .onAppear {
+                                        if post.id == postViewModel.posts.last?.id {
+                                            postViewModel.fetchPosts()
+                                        }
                                     }
-                                }
-                        }
-                        
-                        if postViewModel.isLoading {
-                            ProgressView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
+                            
+                            if postViewModel.isLoading {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                            }
+                            
+                            if !postViewModel.isLoading && !postViewModel.posts.isEmpty {
+                                Text("没有啦，快去记录一条吧～")
+                                    .font(.footnote)
+                                    .foregroundColor(.gray)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                            }
                         }
                     }
                 }
