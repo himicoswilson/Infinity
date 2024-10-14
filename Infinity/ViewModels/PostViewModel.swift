@@ -10,33 +10,54 @@ class PostViewModel: ObservableObject {
     
     private var currentPage = 1
     private let postsPerPage = 10
+    private var fetchTask: Task<Void, Never>?
+
+    private func resetPagination() {
+        currentPage = 1
+        hasMorePosts = true
+        posts = []
+    }
 
     func fetchPosts(refresh: Bool = false) {
-        guard !isLoading else { return }
-        if refresh {
-            currentPage = 1
-            posts = []
-            hasMorePosts = true
-        }
-        guard hasMorePosts else { return }
-        
-        isLoading = true
-        
-        Task {
+        fetchTask?.cancel()
+        fetchTask = Task {
+            if refresh {
+                resetPagination()
+            }
+            
+            guard !self.isLoading else { return }
+            guard self.hasMorePosts else { return }
+
+            self.isLoading = true
+            
             do {
                 let endpoint = "\(Constants.APIEndpoints.posts)?page=\(currentPage)&limit=\(postsPerPage)"
                 let fetchedPosts: [PostDTO] = try await APIService.shared.fetch(endpoint)
+                if Task.isCancelled { return }
+                
+                let updatedPosts = fetchedPosts.map { post in
+                    var updatedPost = post
+                    updatedPost.updateRelativeTime()
+                    return updatedPost
+                }
+                
                 if refresh {
-                    self.posts = fetchedPosts.map { var post = $0; post.updateRelativeTime(); return post }
+                    self.posts = updatedPosts
                 } else {
-                    let updatedPosts = fetchedPosts.map { var post = $0; post.updateRelativeTime(); return post }
                     self.posts.append(contentsOf: updatedPosts)
                 }
-                self.currentPage += 1
+                
                 self.hasMorePosts = fetchedPosts.count == postsPerPage
+                self.currentPage += 1
                 self.errorMessage = nil
             } catch let error as APIError {
-                handleError(error)
+                if !Task.isCancelled {
+                    handleError(error)
+                }
+            } catch {
+                if !Task.isCancelled {
+                    handleUnexpectedError(error)
+                }
             }
             self.isLoading = false
         }
@@ -58,6 +79,11 @@ class PostViewModel: ObservableObject {
             self.errorMessage = "HTTP错误: 状态码 \(statusCode)"
         }
         print("获取帖子错误: \(self.errorMessage ?? "未知错误")")
+    }
+    
+    private func handleUnexpectedError(_ error: Error) {
+        self.errorMessage = "发生未预期的错误: \(error.localizedDescription)"
+        print("获取帖子时发生未预期的错误: \(error)")
     }
 }
 

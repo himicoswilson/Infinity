@@ -6,14 +6,15 @@ class EntitiesViewModel: ObservableObject {
     @Published var entities: [EntityDTO] = []
     @Published var errorMessage: String?
 
-    func fetchEntities() {
-        Task {
-            do {
-                let fetchedEntities: [EntityDTO] = try await APIService.shared.fetch(Constants.APIEndpoints.entities)
-                self.entities = fetchedEntities
-            } catch let error as APIError {
-                handleError(error)
-            }
+    func fetchEntities() async {
+        do {
+            let fetchedEntities: [EntityDTO] = try await APIService.shared.fetch(Constants.APIEndpoints.entities)
+            self.entities = fetchedEntities
+        } catch let error as APIError {
+            handleError(error)
+        } catch {
+            // 处理其他未预期的错误
+            handleUnexpectedError(error)
         }
     }
 
@@ -33,5 +34,10 @@ class EntitiesViewModel: ObservableObject {
             self.errorMessage = "HTTP错误: 状态码 \(statusCode)"
         }
         print("获取实体错误: \(self.errorMessage ?? "未知错误")")
+    }
+    
+    private func handleUnexpectedError(_ error: Error) {
+        self.errorMessage = "发生未预期的错误: \(error.localizedDescription)"
+        print("获取实体时发生未预期的错误: \(error)")
     }
 }

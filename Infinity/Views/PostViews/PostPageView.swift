@@ -1,16 +1,17 @@
 import SwiftUI
 
 struct PostPageView: View {
-    @StateObject private var viewModel = PostViewModel()
-    @StateObject private var entitiesViewModel: EntitiesViewModel
+    @ObservedObject private var postViewModel: PostViewModel
+    @ObservedObject private var entitiesViewModel: EntitiesViewModel
+    @State private var refreshTask: Task<Void, Never>?
     
-    init(entitiesViewModel: EntitiesViewModel) {
-        _entitiesViewModel = StateObject(wrappedValue: entitiesViewModel)
+    init(entitiesViewModel: EntitiesViewModel, postViewModel: PostViewModel) {
+        self.entitiesViewModel = entitiesViewModel
+        self.postViewModel = postViewModel
     }
     
     var body: some View {
         VStack(alignment: .leading) {
-            // Title Section
             Text("Infinity")
                 .font(.title)
                 .fontWeight(.bold)
@@ -19,55 +20,61 @@ struct PostPageView: View {
             
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 15) {
-                    // 人物和宠物页面
                     EntitiesView(viewModel: entitiesViewModel)
                         .padding(.horizontal)
                         .padding(.vertical, 5)
                     
-                    // Divider
                     Divider()
                     
-                    if let errorMessage = viewModel.errorMessage {
+                    if let errorMessage = postViewModel.errorMessage {
                         Text(errorMessage)
                             .foregroundColor(.red)
                             .padding()
-                    } else if viewModel.posts.isEmpty && !viewModel.isLoading {
+                    } else if postViewModel.posts.isEmpty && !postViewModel.isLoading {
                         Text("没有可用的帖子")
                             .padding()
                     } else {
-                        ForEach(viewModel.posts, id: \.id) { post in
+                        ForEach(postViewModel.posts, id: \.id) { post in
                             PostCardView(postdto: post)
                                 .onAppear {
-                                    if post.id == viewModel.posts.last?.id {
-                                        viewModel.fetchPosts()
+                                    if post.id == postViewModel.posts.last?.id {
+                                        postViewModel.fetchPosts()
                                     }
                                 }
                         }
                         
-                        if viewModel.isLoading {
+                        if postViewModel.isLoading {
                             ProgressView()
-                                .padding()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                         }
                     }
                 }
             }
             .refreshable {
-                refreshData()
+                await refreshData()
             }
         }
         .padding(.bottom, 10)
-        .onAppear {
-            if viewModel.posts.isEmpty {
-                viewModel.fetchPosts()
+        .onAppear{
+            Task{
+                if postViewModel.posts.isEmpty {
+                postViewModel.fetchPosts()
+                }
+                if entitiesViewModel.entities.isEmpty{
+                    await entitiesViewModel.fetchEntities()
+                }
             }
-            if entitiesViewModel.entities.isEmpty  {
-                entitiesViewModel.fetchEntities()
-            }
+        }
+        .onDisappear {
+            refreshTask?.cancel()
         }
     }
     
-    func refreshData() {
-        viewModel.fetchPosts(refresh: true)
-        entitiesViewModel.fetchEntities()
+    func refreshData() async {
+        refreshTask?.cancel()
+        refreshTask = Task {
+            postViewModel.fetchPosts(refresh: true)
+            await entitiesViewModel.fetchEntities()
+        }
     }
 }

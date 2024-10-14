@@ -1,43 +1,59 @@
 import SwiftUI
 import Kingfisher
+import PhotosUI
 
 struct CoupleProfileView: View {
-    @StateObject private var viewModel = CoupleViewModel()
+    @StateObject private var coupleViewModel: CoupleViewModel
     @State private var showImagePicker = false
     @State private var selectedBackgroundImage: UIImage?
+    @State private var selectedBackgroundItem: PhotosPickerItem?
+    @State private var showConfirmationDialog = false
+
+    init(coupleViewModel: CoupleViewModel) {
+        _coupleViewModel = StateObject(wrappedValue: coupleViewModel)
+    }
     
     var body: some View {
         VStack(spacing: 0) {
-            if let couple = viewModel.couple, let _ = viewModel.user1, let _ = viewModel.user2 {
+            if let couple = coupleViewModel.couple, let _ = coupleViewModel.user1, let _ = coupleViewModel.user2 {
                 // 背景图片
-                Button(action: {
-                    showImagePicker = true
-                }) {
+                PhotosPicker(selection: $selectedBackgroundItem, matching: .images) {
                     if let bgImageURL = couple.bgImg {
-                        KFImage(URL(string: bgImageURL))
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(height: 300)
-                            .clipped() // 添加这行来裁剪溢出的部分
+                        BackgroundImageView(imageURL: bgImageURL)
                     } else {
                         Rectangle()
                             .fill(Color.gray.opacity(0.3))
                             .frame(height: 300)
                     }
                 }
-                .frame(maxWidth: .infinity) // 确保按钮占据全宽
-                .sheet(isPresented: $showImagePicker) {
-                    ImagePicker(image: $selectedBackgroundImage, completion: uploadBackgroundImage)
+                .frame(maxWidth: .infinity)
+                .onChange(of: selectedBackgroundItem) { _ in
+                    Task {
+                        if let data = try? await selectedBackgroundItem?.loadTransferable(type: Data.self) {
+                            if let uiImage = UIImage(data: data) {
+                                selectedBackgroundImage = uiImage
+                                showConfirmationDialog = true
+                            }
+                        }
+                    }
+                }
+                .confirmationDialog("上传背景图片?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
+                    Button("确认上传") {
+                        uploadBackgroundImage()
+                    }
+                    Button("取消", role: .cancel) {
+                        selectedBackgroundImage = nil
+                    }
                 }
                 
                 HStack(spacing: 20) {
-                    UserInfoView(user: viewModel.currentUser)
+                    UserInfoView(user: coupleViewModel.currentUser)
                     
                     SwiftUI.Image(systemName: "heart.fill")
                         .foregroundColor(SwiftUI.Color.red)
                         .font(SwiftUI.Font.system(size: 40))
                     
-                    UserInfoView(user: viewModel.lover)
+                    UserInfoView(user: coupleViewModel.lover)
                 }
                 .padding()
                 .offset(y: -30)
@@ -55,7 +71,7 @@ struct CoupleProfileView: View {
                     .padding(.top, 50)
                 
                 Spacer() // 将内容推到顶部
-            } else if let errorMessage = viewModel.errorMessage {
+            } else if let errorMessage = coupleViewModel.errorMessage {
                 SwiftUI.Text(errorMessage)
                     .foregroundColor(SwiftUI.Color.red)
             } else {
@@ -64,7 +80,9 @@ struct CoupleProfileView: View {
         }
         .edgesIgnoringSafeArea(.top)
         .onAppear {
-            viewModel.fetchCoupleInfo()
+            if coupleViewModel.couple == nil{
+                coupleViewModel.fetchCoupleInfo()
+            }
         }
     }
     
@@ -89,7 +107,7 @@ struct CoupleProfileView: View {
     private func uploadBackgroundImage() {
         guard let image = selectedBackgroundImage,
               let imageData = image.jpegData(compressionQuality: 0.8),
-              let coupleId = viewModel.couple?.coupleID else {
+              let coupleId = coupleViewModel.couple?.coupleID else {
             print("无法获取图片数据或 coupleId")
             return
         }
@@ -131,7 +149,7 @@ struct CoupleProfileView: View {
                 if httpResponse.statusCode == 200 {
                     print("背景图片上传成功")
                     DispatchQueue.main.async {
-                        viewModel.fetchCoupleInfo()  // 刷新数据
+                        coupleViewModel.fetchCoupleInfo()  // 刷新数据
                     }
                 } else {
                     print("背景图片上传失败")
@@ -147,23 +165,15 @@ struct CoupleProfileView: View {
 
 struct UserInfoView: View {
     let user: User
-    @State private var showImagePicker = false
+    @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
+    @State private var showConfirmationDialog = false
     
     var body: some View {
         VStack {
-            Button(action: {
-                print("头像按钮被点击")
-                showImagePicker = true
-            }) {
+            PhotosPicker(selection: $selectedItem, matching: .images) {
                 if let avatarURL = user.avatar {
-                    KFImage(URL(string: avatarURL))
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 80, height: 80)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white, lineWidth: 3))
-                        .shadow(radius: 3)
+                    AvatarImageView(imageURL: avatarURL)
                 } else {
                     SwiftUI.Image(systemName: "person.circle.fill")
                         .resizable()
@@ -172,11 +182,26 @@ struct UserInfoView: View {
                         .foregroundColor(.gray)
                 }
             }
-            .sheet(isPresented: $showImagePicker) {
-                ImagePicker(image: $selectedImage, completion: uploadAvatar)
+            .onChange(of: selectedItem) { _ in
+                Task {
+                    if let data = try? await selectedItem?.loadTransferable(type: Data.self) {
+                        if let uiImage = UIImage(data: data) {
+                            selectedImage = uiImage
+                            showConfirmationDialog = true
+                        }
+                    }
+                }
+            }
+            .confirmationDialog("上传头像?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
+                Button("确认上传") {
+                    uploadAvatar()
+                }
+                Button("取消", role: .cancel) {
+                    selectedImage = nil
+                }
             }
             
-            SwiftUI.Text(user.nickName ?? user.userName)
+            Text(user.nickName ?? user.userName)
                 .font(.headline)
         }
     }
@@ -239,45 +264,28 @@ struct UserInfoView: View {
     }
 }
 
-struct ImagePicker: UIViewControllerRepresentable {
-    @Binding var image: UIImage?
-    var completion: () -> Void
+struct BackgroundImageView: View {
+    let imageURL: String
     
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        print("创建 UIImagePickerController")
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        return picker
+    var body: some View {
+        KFImage(URL(string: imageURL))
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(height: 300)
+            .clipped()
     }
+}
+
+struct AvatarImageView: View {
+    let imageURL: String
     
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: ImagePicker
-        
-        init(_ parent: ImagePicker) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            print("图片选择完成")
-            if let image = info[.originalImage] as? UIImage {
-                print("成功获取选中的图片")
-                parent.image = image
-                parent.completion()
-            } else {
-                print("无法获取选中的图片")
-            }
-            picker.dismiss(animated: true)
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            print("图片选择被取消")
-            picker.dismiss(animated: true)
-        }
+    var body: some View {
+        KFImage(URL(string: imageURL))
+            .resizable()
+            .scaledToFill()
+            .frame(width: 80, height: 80)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(Color.white, lineWidth: 3))
+            .shadow(radius: 3)
     }
 }

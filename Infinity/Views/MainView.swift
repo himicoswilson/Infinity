@@ -3,17 +3,23 @@ import SwiftUI
 struct MainView: View {
     @StateObject private var authViewModel = AuthViewModel()
     @StateObject private var coupleViewModel = CoupleViewModel()
+    @StateObject private var postViewModel = PostViewModel()
     @StateObject private var entitiesViewModel = EntitiesViewModel()
     @State private var selectedTab = 0
     @State private var showCreatePost = false
+    @State private var isLoading = true
     @Environment(\.colorScheme) var colorScheme
+    @State private var opacity = 0.0
 
     var body: some View {
         Group {
-            if authViewModel.isAuthenticated {
+            if isLoading {
+                SplashView()
+                    .opacity(1 - opacity)
+            } else if authViewModel.isAuthenticated {
                 ZStack(alignment: .bottom) {
                     TabView(selection: $selectedTab) {
-                        PostPageView(entitiesViewModel: entitiesViewModel)
+                        PostPageView(entitiesViewModel: entitiesViewModel, postViewModel: postViewModel)
                             .tabItem {
                                 SwiftUI.Image(systemName: "seal.fill")
                                     .renderingMode(.template)
@@ -24,8 +30,7 @@ struct MainView: View {
                         BirthdayCardView()
                             .tag(1)
                         
-                        CoupleProfileView()
-                            .environmentObject(coupleViewModel)
+                        CoupleProfileView(coupleViewModel: coupleViewModel)
                             .tabItem {
                                 SwiftUI.Image(systemName: "heart")
                                     .renderingMode(.template)
@@ -53,18 +58,41 @@ struct MainView: View {
                         .padding(.bottom, 8)
                     }
                 }
+                .opacity(opacity)
+                .animation(.easeInOut(duration: 0.5), value: opacity)
                 .sheet(isPresented: $showCreatePost) {
                     CreatePostView(showCreatePost: $showCreatePost, entitiesViewModel: entitiesViewModel)
                 }
             } else {
                 LoginView(viewModel: authViewModel)
+                    .opacity(opacity)
+                    .animation(.easeInOut(duration: 0.5), value: opacity)
             }
         }
         .onAppear {
             authViewModel.checkAuthenticationStatus()
             if authViewModel.isAuthenticated {
-                entitiesViewModel.fetchEntities()
+                Task {
+                    await loadInitialData()
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        opacity = 1.0
+                        isLoading = false
+                    }
+                }
+                coupleViewModel.fetchCoupleInfo()
+            } else {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    opacity = 1.0
+                    isLoading = false
+                }
             }
+        }
+    }
+
+    func loadInitialData() async {
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await entitiesViewModel.fetchEntities() }
+            group.addTask { await postViewModel.fetchPosts() }
         }
     }
 }

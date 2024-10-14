@@ -52,7 +52,7 @@ struct CreatePostView: View {
             ScrollView {
                 TextField("说点什么吧～", text: $viewModel.content, axis: .vertical)
                     .frame(minHeight: 48)
-                    .font(.title3)
+                    .font(.body)
                     .padding()
                     .focused($focusedField)
                 
