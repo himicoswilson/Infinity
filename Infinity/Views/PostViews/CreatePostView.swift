@@ -107,10 +107,10 @@ struct CreatePostView: View {
                                 }
                                 photoList.removeAll()
                             }
-                        }
+                        }g
                     }
+                    .padding(.horizontal, 16)
                 }
-                .padding()
                 
                 Divider()
                     .padding()
@@ -141,7 +141,9 @@ struct CreatePostView: View {
                                 }
                             }
                         }
+                        .padding(.horizontal, 16)
                     }
+                    .padding(.horizontal, -16)
                 }
                 .padding(.horizontal)
             }

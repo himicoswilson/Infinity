@@ -16,7 +16,9 @@ struct EntitiesView: View {
                             EntityView(entity: entity)
                         }
                     }
+                    .padding(.horizontal, 16)
                 }
+                .padding(.horizontal, -16)
             }
         }
     }

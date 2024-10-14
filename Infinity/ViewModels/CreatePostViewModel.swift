@@ -7,7 +7,7 @@ class CreatePostViewModel: ObservableObject {
     @Published var content: String = ""
     @Published var selectedImages: [UIImage] = []
     @Published var entities: [Entity] = []
-    @Published var selectedEntities: [Int] = []
+    @Published var selectedEntities: Set<Int> = []
     @Published var isAllSelected: Bool = false
     @Published var errorMessage: String?
     @Published var isLoading: Bool = false
@@ -33,19 +33,23 @@ class CreatePostViewModel: ObservableObject {
         selectedImages.remove(at: index)
     }
     
+    var allEntitiesSelected: Bool {
+        selectedEntities.count == entities.count && !entities.isEmpty
+    }
+    
     func toggleEntitySelection(_ entityId: Int) {
         if selectedEntities.contains(entityId) {
-            selectedEntities.removeAll { $0 == entityId }
-            isAllSelected = false
+            selectedEntities.remove(entityId)
         } else {
-            selectedEntities.append(entityId)
+            selectedEntities.insert(entityId)
         }
+        isAllSelected = allEntitiesSelected
     }
     
     func toggleAllSelection() {
         isAllSelected.toggle()
         if isAllSelected {
-            selectedEntities = entities.map { $0.id }
+            selectedEntities = Set(entities.map { $0.id })
         } else {
             selectedEntities.removeAll()
         }

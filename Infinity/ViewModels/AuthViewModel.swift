@@ -4,6 +4,7 @@ import Foundation
 class AuthViewModel: ObservableObject {
     @Published var isAuthenticated = false
     @Published var errorMessage: String?
+    @Published var loginSuccessful = false
 
     func checkAuthenticationStatus() {
         if UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.token) != nil {
@@ -19,6 +20,7 @@ class AuthViewModel: ObservableObject {
                 let loginData = ["username": username, "password": password]
                 let response: LoginResponse = try await APIService.shared.post(Constants.APIEndpoints.login, body: loginData)
                 
+                self.loginSuccessful = true
                 // 立即更新认证状态
                 self.isAuthenticated = true
                 
