@@ -3,7 +3,7 @@ import Kingfisher
 
 struct ZoomableImageView: View {
     let imageURL: String
-    let onDismiss: () -> Void // 添加此行
+    let onDismiss: () -> Void
     @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
@@ -18,40 +18,41 @@ struct ZoomableImageView: View {
                 .offset(offset)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .contentShape(Rectangle())
-                // 仅在放大状态下添加拖动手势
                 .gesture(
                     scale > 1 ? (
                         DragGesture()
                             .onChanged { value in
-                                withAnimation {
-                                    let newOffset = CGSize(
-                                        width: lastOffset.width + value.translation.width,
-                                        height: lastOffset.height + value.translation.height
-                                    )
-                                    offset = newOffset
+                                let newOffset = CGSize(
+                                    width: lastOffset.width + value.translation.width,
+                                    height: lastOffset.height + value.translation.height
+                                )
+                                withAnimation(.interactiveSpring()) {
+                                    offset = limitOffset(newOffset, in: geometry, allowOverscroll: true)
                                 }
                             }
                             .onEnded { _ in
-                                let finalOffset = limitOffset(offset, in: geometry, allowOverscroll: false)
                                 withAnimation(.spring()) {
-                                    offset = finalOffset
-                                    lastOffset = finalOffset  // 确保在动画块中同时更新
+                                    offset = limitOffset(offset, in: geometry, allowOverscroll: false)
+                                    lastOffset = offset
                                 }
                             }
                     ) : nil
                 )
-                .simultaneousGesture(
-                    dragToDismissGesture
-                )
-                .simultaneousGesture(
-                    tapGesture
-                )
+                .simultaneousGesture(tapGesture)
                 .simultaneousGesture(
                     MagnificationGesture()
                         .onChanged { value in
                             let delta = value / lastScale
                             lastScale = value
-                            scale *= delta
+                            let newScale = scale * delta
+                            scale = min(max(newScale, 0.5), 6.0)
+                            
+                            // 实时调整偏移量以保持缩放中心
+                            let updatedOffset = CGSize(
+                                width: offset.width * delta,
+                                height: offset.height * delta
+                            )
+                            offset = limitOffset(updatedOffset, in: geometry, allowOverscroll: true)
                         }
                         .onEnded { _ in
                             lastScale = 1.0
@@ -82,41 +83,12 @@ struct ZoomableImageView: View {
 
         let singleTapGesture = TapGesture(count: 1)
             .onEnded {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(.easeInOut(duration: 0.5)) {
                     onDismiss()
                 }
             }
 
         return ExclusiveGesture(doubleTapGesture, singleTapGesture)
-    }
-
-    // 下滑退出手势
-    var dragToDismissGesture: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                if scale == 1 {
-                    if abs(value.translation.height) > abs(value.translation.width) {
-                        withAnimation(.linear(duration: 0.2)) {  // 平滑的动画过渡
-                            offset = CGSize(width: 0, height: value.translation.height)
-                        }
-                    }
-                }
-            }
-            .onEnded { value in
-                if scale == 1 {
-                    if abs(value.translation.height) > abs(value.translation.width) {
-                        if value.translation.height > 100 {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                onDismiss()
-                            }
-                        } else {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0)) {
-                                offset = .zero
-                            }
-                        }
-                    }
-                }
-            }
     }
 
     // limitOffset 函数，用于限制偏移量
@@ -127,23 +99,23 @@ struct ZoomableImageView: View {
         let maxOffsetX = max((scaledWidth - geometry.size.width) / 2, 0)
         let maxOffsetY = max((scaledHeight - geometry.size.height) / 2, 0)
 
-        var minX = -maxOffsetX
-        var maxX = maxOffsetX
-        var minY = -maxOffsetY
-        var maxY = maxOffsetY
+        let minX = -maxOffsetX
+        let maxX = maxOffsetX
+        let minY = -maxOffsetY
+        let maxY = maxOffsetY
 
-        if allowOverscroll {
-            // 设置允许超出的最大距离
-            let overscrollLimit: CGFloat = 100
-            minX -= overscrollLimit
-            maxX += overscrollLimit
-            minY -= overscrollLimit
-            maxY += overscrollLimit
-        }
+        let overscrollLimit: CGFloat = 50
+        let springForce: CGFloat = allowOverscroll ? 0.3 : 1.0
+
+        let boundedOffsetX = offset.width.clamped(to: (minX - overscrollLimit)...(maxX + overscrollLimit))
+        let boundedOffsetY = offset.height.clamped(to: (minY - overscrollLimit)...(maxY + overscrollLimit))
+
+        let deltaX = boundedOffsetX < minX || boundedOffsetX > maxX ? (boundedOffsetX > maxX ? maxX : minX) - boundedOffsetX : 0
+        let deltaY = boundedOffsetY < minY || boundedOffsetY > maxY ? (boundedOffsetY > maxY ? maxY : minY) - boundedOffsetY : 0
 
         return CGSize(
-            width: offset.width.clamped(to: minX...maxX),
-            height: offset.height.clamped(to: minY...maxY)
+            width: boundedOffsetX + deltaX * springForce,
+            height: boundedOffsetY + deltaY * springForce
         )
     }
 }

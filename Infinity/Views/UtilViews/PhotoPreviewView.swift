@@ -2,12 +2,12 @@ import SwiftUI
 
 struct PhotoPreviewView: View {
     var images: [ImageDTO]
-    @State private var currentPage: Int
+    @Binding var currentPage: Int
     @Environment(\.presentationMode) var presentationMode
 
-    init(images: [ImageDTO], initialPage: Int = 0) {
+    init(images: [ImageDTO], currentPage: Binding<Int>) {
         self.images = images
-        self._currentPage = State(initialValue: initialPage)
+        self._currentPage = currentPage
     }
 
     var body: some View {

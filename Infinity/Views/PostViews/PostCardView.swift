@@ -4,7 +4,7 @@ import Kingfisher
 struct PostCardView: View {
     let postdto: PostDTO
     @State private var showImagePreview = false
-    @State private var currentPage = 0
+    @State private var previewCurrentPage = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -59,7 +59,7 @@ struct PostCardView: View {
                                     .frame(width: 200, height: 250)
                                     .cornerRadius(10)
                                     .onTapGesture {
-                                        currentPage = index  // 设置当前页
+                                        previewCurrentPage = index
                                         showImagePreview = true
                                     }
                             }
@@ -72,7 +72,7 @@ struct PostCardView: View {
             }
         }
         .fullScreenCover(isPresented: $showImagePreview) {
-            PhotoPreviewView(images: postdto.images, initialPage: currentPage)
+            PhotoPreviewView(images: postdto.images, currentPage: $previewCurrentPage)
                 .edgesIgnoringSafeArea(.all)
         }
     }
