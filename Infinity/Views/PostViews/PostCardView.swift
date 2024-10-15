@@ -3,7 +3,7 @@ import Kingfisher
 
 struct PostCardView: View {
     let postdto: PostDTO
-    @State private var selectedImageURL: String?
+    @State private var currentPage = 0
     @State private var showImagePreview = false
     
     var body: some View {
@@ -59,7 +59,6 @@ struct PostCardView: View {
                                     .frame(width: 200, height: 250)
                                     .cornerRadius(10)
                                     .onTapGesture {
-                                        selectedImageURL = image.imageURL
                                         showImagePreview = true
                                     }
                             }
@@ -72,9 +71,8 @@ struct PostCardView: View {
             }
         }
         .sheet(isPresented: $showImagePreview) {
-            if let imageURL = selectedImageURL {
-                ImagePreviewView(imageURL: imageURL)
-            }
+            PhotoPreviewView(images: postdto.images)
+                .edgesIgnoringSafeArea(.all)
         }
     }
 }
