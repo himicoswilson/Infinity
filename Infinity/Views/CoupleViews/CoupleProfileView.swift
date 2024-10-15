@@ -75,8 +75,10 @@ struct CoupleProfileView: View {
                 } else if let errorMessage = coupleViewModel.errorMessage {
                     SwiftUI.Text(errorMessage)
                         .foregroundColor(SwiftUI.Color.red)
+                        .padding(.top, 100)
                 } else {
                     SwiftUI.Text("加载中...")
+                        .padding(.top, 100)
                 }
             }
         }

@@ -10,6 +10,7 @@ class EntitiesViewModel: ObservableObject {
         do {
             let fetchedEntities: [EntityDTO] = try await APIService.shared.fetch(Constants.APIEndpoints.entities)
             self.entities = fetchedEntities
+            self.errorMessage = nil
         } catch let error as APIError {
             handleError(error)
         } catch {

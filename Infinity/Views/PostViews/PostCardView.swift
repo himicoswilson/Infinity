@@ -3,8 +3,8 @@ import Kingfisher
 
 struct PostCardView: View {
     let postdto: PostDTO
-    @State private var currentPage = 0
     @State private var showImagePreview = false
+    @State private var currentPage = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -52,13 +52,14 @@ struct PostCardView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
-                            ForEach(postdto.images, id: \.id) { image in
-                                KFImage(URL(string: image.imageURL))
+                            ForEach(postdto.images.indices, id: \.self) { index in
+                                KFImage(URL(string: postdto.images[index].imageURL))
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
                                     .frame(width: 200, height: 250)
                                     .cornerRadius(10)
                                     .onTapGesture {
+                                        currentPage = index  // 设置当前页
                                         showImagePreview = true
                                     }
                             }
@@ -70,8 +71,8 @@ struct PostCardView: View {
                 .padding(.vertical, 5)
             }
         }
-        .sheet(isPresented: $showImagePreview) {
-            PhotoPreviewView(images: postdto.images)
+        .fullScreenCover(isPresented: $showImagePreview) {
+            PhotoPreviewView(images: postdto.images, initialPage: currentPage)
                 .edgesIgnoringSafeArea(.all)
         }
     }
