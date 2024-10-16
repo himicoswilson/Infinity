@@ -89,5 +89,9 @@ class APIService {
         }
     }
     
+    func fetchWithoutResponse(_ endpoint: String) async throws {
+        let _: EmptyResponse = try await fetch(endpoint)
+    }
+    
     // 添加其他 API 方法，如 put, delete 等
 }

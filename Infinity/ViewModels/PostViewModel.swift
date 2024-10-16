@@ -85,6 +85,51 @@ class PostViewModel: ObservableObject {
         self.errorMessage = "发生未预期的错误: \(error.localizedDescription)"
         print("获取帖子时发生未预期的错误: \(error)")
     }
+
+    func fetchPostsByEntity(entityId: Int, refresh: Bool = true) {
+        fetchTask?.cancel()
+        fetchTask = Task {
+            if refresh {
+                resetPagination()
+            }
+            
+            guard !self.isLoading else { return }
+            guard self.hasMorePosts else { return }
+
+            self.isLoading = true
+
+            do {
+                let endpoint = Constants.APIEndpoints.postByEntityId(entityId, currentPage, postsPerPage)
+                let fetchedPosts: [PostDTO] = try await APIService.shared.fetch(endpoint)
+                if Task.isCancelled { return }
+                
+                let updatedPosts = fetchedPosts.map { post in
+                    var updatedPost = post
+                    updatedPost.updateRelativeTime()
+                    return updatedPost
+                }
+                
+                if refresh {
+                    self.posts = updatedPosts
+                } else {
+                    self.posts.append(contentsOf: updatedPosts)
+                }
+                
+                self.hasMorePosts = fetchedPosts.count == postsPerPage
+                self.currentPage += 1
+                self.errorMessage = nil
+            } catch let error as APIError {
+                if !Task.isCancelled {
+                    handleError(error)
+                }
+            } catch {
+                if !Task.isCancelled {
+                    handleUnexpectedError(error)
+                }
+            }
+            self.isLoading = false
+        }
+    }
 }
 
 class PostDetailViewModel: ObservableObject {

@@ -41,4 +41,17 @@ class EntitiesViewModel: ObservableObject {
         self.errorMessage = "发生未预期的错误: \(error.localizedDescription)"
         print("获取实体时发生未预期的错误: \(error)")
     }
+
+    func updateEntityViewedStatus(_ entityID: Int) async {
+        if let index = entities.firstIndex(where: { $0.entityID == entityID }) {
+            entities[index].unviewed = false
+        }
+        let endpoint = Constants.APIEndpoints.updateLastViewed(entityID)
+        do {
+            try await APIService.shared.fetchWithoutResponse(endpoint)
+            print("更新实体浏览状态成功")
+        } catch {
+            print("更新实体浏览状态失败: \(error)")
+        }
+    }
 }

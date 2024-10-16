@@ -5,5 +5,5 @@ struct EntityDTO: Identifiable, Codable {
     let entityType: String
     let avatar: String?
     let coupleID: Int
-    let unviewed: Bool
+    var unviewed: Bool
 }

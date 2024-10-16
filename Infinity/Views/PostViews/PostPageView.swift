@@ -4,6 +4,7 @@ struct PostPageView: View {
     @ObservedObject private var postViewModel: PostViewModel
     @ObservedObject private var entitiesViewModel: EntitiesViewModel
     @State private var refreshTask: Task<Void, Never>?
+    @State private var selectedEntity: EntityDTO?
     
     init(entitiesViewModel: EntitiesViewModel, postViewModel: PostViewModel) {
         self.entitiesViewModel = entitiesViewModel
@@ -20,7 +21,7 @@ struct PostPageView: View {
             
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 15) {
-                    EntitiesView(viewModel: entitiesViewModel)
+                    EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected)
                         .padding(.horizontal)
                         .padding(.vertical, 5)
                     
@@ -69,7 +70,7 @@ struct PostPageView: View {
         .onAppear{
             Task{
                 if postViewModel.posts.isEmpty {
-                postViewModel.fetchPosts()
+                    postViewModel.fetchPosts()
                 }
                 if entitiesViewModel.entities.isEmpty{
                     await entitiesViewModel.fetchEntities()
@@ -84,8 +85,23 @@ struct PostPageView: View {
     func refreshData() async {
         refreshTask?.cancel()
         refreshTask = Task {
-            postViewModel.fetchPosts(refresh: true)
+            if let entity = selectedEntity {
+                postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
+            } else {
+                postViewModel.fetchPosts(refresh: true)
+            }
             await entitiesViewModel.fetchEntities()
+        }
+    }
+
+    func onEntitySelected(_ entity: EntityDTO?) {
+        guard selectedEntity?.id != entity?.entityID else { return }
+        selectedEntity = entity
+        print("Entity selected(PostPageView): \(entity?.entityID ?? -1)")
+        if let entity = entity {
+            postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
+        } else {
+            postViewModel.fetchPosts(refresh: true)
         }
     }
 }
