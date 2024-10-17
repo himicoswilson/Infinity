@@ -13,13 +13,11 @@ class PostViewModel: ObservableObject {
     private var currentPage = 1
     private let postsPerPage = 10
     private var fetchTask: Task<Void, Never>?
-    private var allPosts: [PostDTO] = []  // 用于存储所有帖子
 
     private func resetPagination() {
         currentPage = 1
         hasMorePosts = true
         posts = []
-        postsByEntity = []
     }
 
     func fetchPosts(refresh: Bool = false) {
@@ -54,8 +52,6 @@ class PostViewModel: ObservableObject {
                 self.hasMorePosts = fetchedPosts.count == postsPerPage
                 self.currentPage += 1
                 self.errorMessage = nil
-                // 在成功获取帖子后，添加以下代码：
-                self.allPosts = self.posts  // 保存所有帖子的副本
             } catch let error as APIError {
                 if !Task.isCancelled {
                     handleError(error)
@@ -96,7 +92,9 @@ class PostViewModel: ObservableObject {
         fetchTask?.cancel()
         fetchTask = Task {
             if refresh {
-                resetPagination()
+                currentPage = 1
+                hasMorePosts = true
+                postsByEntity = []
             }
             
             guard !self.isLoading else { return }
@@ -135,11 +133,6 @@ class PostViewModel: ObservableObject {
             }
             self.isLoading = false
         }
-    }
-
-    func switchToAllPosts() {
-        self.posts = self.allPosts  // 恢复所有帖子
-        self.isShowingEntityPosts = false
     }
 }
 

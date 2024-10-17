@@ -103,7 +103,7 @@ struct PostPageView: View {
             if selectedEntity?.entityID == entity.entityID {
                 // 如果再次点击相同的实体，切换回显示所有帖子
                 selectedEntity = nil
-                postViewModel.switchToAllPosts()
+                postViewModel.isShowingEntityPosts = false
             } else {
                 // 选择新的实体
                 selectedEntity = entity
@@ -113,7 +113,7 @@ struct PostPageView: View {
         } else {
             // 取消选择实体
             selectedEntity = nil
-            postViewModel.switchToAllPosts()
+            postViewModel.isShowingEntityPosts = false
         }
     }
 }

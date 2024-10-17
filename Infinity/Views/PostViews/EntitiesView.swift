@@ -1,5 +1,6 @@
 import SwiftUI
 import Kingfisher
+import UIKit
 
 struct EntitiesView: View {
     @ObservedObject var viewModel: EntitiesViewModel
@@ -17,6 +18,10 @@ struct EntitiesView: View {
                         ForEach(viewModel.entities, id: \.id) { entity in
                             EntityView(entity: entity, isSelected: entity.entityID == selectedEntityId)
                                 .onTapGesture {
+                                    // 添加触觉反馈
+                                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                                    impact.impactOccurred()
+                                    
                                     if selectedEntityId == entity.entityID {
                                         selectedEntityId = nil
                                         onEntitySelected(nil)
