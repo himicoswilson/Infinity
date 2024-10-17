@@ -4,6 +4,8 @@ import SwiftUI
 @MainActor
 class PostViewModel: ObservableObject {
     @Published var posts: [PostDTO] = []
+    @Published var postsByEntity: [PostDTO] = []
+    @Published var isShowingEntityPosts: Bool = false
     @Published var errorMessage: String?
     @Published var isLoading = false
     @Published var hasMorePosts = true
@@ -11,11 +13,13 @@ class PostViewModel: ObservableObject {
     private var currentPage = 1
     private let postsPerPage = 10
     private var fetchTask: Task<Void, Never>?
+    private var allPosts: [PostDTO] = []  // 用于存储所有帖子
 
     private func resetPagination() {
         currentPage = 1
         hasMorePosts = true
         posts = []
+        postsByEntity = []
     }
 
     func fetchPosts(refresh: Bool = false) {
@@ -50,6 +54,8 @@ class PostViewModel: ObservableObject {
                 self.hasMorePosts = fetchedPosts.count == postsPerPage
                 self.currentPage += 1
                 self.errorMessage = nil
+                // 在成功获取帖子后，添加以下代码：
+                self.allPosts = self.posts  // 保存所有帖子的副本
             } catch let error as APIError {
                 if !Task.isCancelled {
                     handleError(error)
@@ -86,7 +92,7 @@ class PostViewModel: ObservableObject {
         print("获取帖子时发生未预期的错误: \(error)")
     }
 
-    func fetchPostsByEntity(entityId: Int, refresh: Bool = true) {
+    func fetchPostsByEntity(entityId: Int, refresh: Bool = false) {
         fetchTask?.cancel()
         fetchTask = Task {
             if refresh {
@@ -110,9 +116,9 @@ class PostViewModel: ObservableObject {
                 }
                 
                 if refresh {
-                    self.posts = updatedPosts
+                    self.postsByEntity = updatedPosts
                 } else {
-                    self.posts.append(contentsOf: updatedPosts)
+                    self.postsByEntity.append(contentsOf: updatedPosts)
                 }
                 
                 self.hasMorePosts = fetchedPosts.count == postsPerPage
@@ -129,6 +135,11 @@ class PostViewModel: ObservableObject {
             }
             self.isLoading = false
         }
+    }
+
+    func switchToAllPosts() {
+        self.posts = self.allPosts  // 恢复所有帖子
+        self.isShowingEntityPosts = false
     }
 }
 

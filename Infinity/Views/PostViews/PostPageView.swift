@@ -31,16 +31,20 @@ struct PostPageView: View {
                         Text(errorMessage)
                             .foregroundColor(.red)
                             .padding()
-                    } else if postViewModel.posts.isEmpty && !postViewModel.isLoading {
+                    } else if (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts).isEmpty && !postViewModel.isLoading {
                         Text("没有可用的帖子")
                             .padding()
                     } else {
                         VStack(spacing: 25) {
-                            ForEach(postViewModel.posts, id: \.id) { post in
+                            ForEach(postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts, id: \.id) { post in
                                 PostCardView(postdto: post)
                                     .onAppear {
-                                        if post.id == postViewModel.posts.last?.id {
-                                            postViewModel.fetchPosts()
+                                        if post.id == (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts).last?.id {
+                                            if postViewModel.isShowingEntityPosts {
+                                                postViewModel.fetchPostsByEntity(entityId: selectedEntity!.entityID)
+                                            } else {
+                                                postViewModel.fetchPosts()
+                                            }
                                         }
                                     }
                             }
@@ -95,13 +99,21 @@ struct PostPageView: View {
     }
 
     func onEntitySelected(_ entity: EntityDTO?) {
-        guard selectedEntity?.id != entity?.entityID else { return }
-        selectedEntity = entity
-        print("Entity selected(PostPageView): \(entity?.entityID ?? -1)")
         if let entity = entity {
-            postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
+            if selectedEntity?.entityID == entity.entityID {
+                // 如果再次点击相同的实体，切换回显示所有帖子
+                selectedEntity = nil
+                postViewModel.switchToAllPosts()
+            } else {
+                // 选择新的实体
+                selectedEntity = entity
+                postViewModel.isShowingEntityPosts = true
+                postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
+            }
         } else {
-            postViewModel.fetchPosts(refresh: true)
+            // 取消选择实体
+            selectedEntity = nil
+            postViewModel.switchToAllPosts()
         }
     }
 }
