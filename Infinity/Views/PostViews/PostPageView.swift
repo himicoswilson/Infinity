@@ -74,7 +74,7 @@ struct PostPageView: View {
         .onAppear{
             Task{
                 if postViewModel.posts.isEmpty {
-                    postViewModel.fetchPosts()
+                    postViewModel.fetchPosts(refresh: true)
                 }
                 if entitiesViewModel.entities.isEmpty{
                     await entitiesViewModel.fetchEntities()
@@ -107,8 +107,8 @@ struct PostPageView: View {
             } else {
                 // 选择新的实体
                 selectedEntity = entity
-                postViewModel.isShowingEntityPosts = true
                 postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
+                postViewModel.isShowingEntityPosts = true
             }
         } else {
             // 取消选择实体

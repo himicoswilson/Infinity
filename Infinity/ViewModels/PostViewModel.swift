@@ -14,24 +14,20 @@ class PostViewModel: ObservableObject {
     private let postsPerPage = 10
     private var fetchTask: Task<Void, Never>?
 
-    private func resetPagination() {
-        currentPage = 1
-        hasMorePosts = true
-        posts = []
-    }
-
     func fetchPosts(refresh: Bool = false) {
         fetchTask?.cancel()
         fetchTask = Task {
             if refresh {
-                resetPagination()
+                currentPage = 1
+                hasMorePosts = true
+                posts = []
+            } else if self.isLoading {
+                return
             }
             
-            guard !self.isLoading else { return }
             guard self.hasMorePosts else { return }
 
             self.isLoading = true
-            
             do {
                 let endpoint = "\(Constants.APIEndpoints.posts)?page=\(currentPage)&limit=\(postsPerPage)"
                 let fetchedPosts: [PostDTO] = try await APIService.shared.fetch(endpoint)
@@ -61,7 +57,10 @@ class PostViewModel: ObservableObject {
                     handleUnexpectedError(error)
                 }
             }
-            self.isLoading = false
+            
+            if !Task.isCancelled {
+                self.isLoading = false
+            }
         }
     }
 
@@ -95,9 +94,10 @@ class PostViewModel: ObservableObject {
                 currentPage = 1
                 hasMorePosts = true
                 postsByEntity = []
+            } else if self.isLoading {
+                return
             }
             
-            guard !self.isLoading else { return }
             guard self.hasMorePosts else { return }
 
             self.isLoading = true
@@ -131,7 +131,10 @@ class PostViewModel: ObservableObject {
                     handleUnexpectedError(error)
                 }
             }
-            self.isLoading = false
+            
+            if !Task.isCancelled {
+                self.isLoading = false
+            }
         }
     }
 }

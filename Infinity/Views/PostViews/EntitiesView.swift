@@ -18,19 +18,22 @@ struct EntitiesView: View {
                         ForEach(viewModel.entities, id: \.id) { entity in
                             EntityView(entity: entity, isSelected: entity.entityID == selectedEntityId)
                                 .onTapGesture {
-                                    // 添加触觉反馈
+                                    // 将触觉反馈移到顶部
                                     let impact = UIImpactFeedbackGenerator(style: .medium)
+                                    impact.prepare() // 预先准备触觉引擎
                                     impact.impactOccurred()
                                     
-                                    if selectedEntityId == entity.entityID {
-                                        selectedEntityId = nil
-                                        onEntitySelected(nil)
-                                    } else {
-                                        selectedEntityId = entity.entityID
-                                        onEntitySelected(entity)
-                                        if entity.unviewed {
-                                            Task {
-                                                await viewModel.updateEntityViewedStatus(entity.entityID)
+                                    DispatchQueue.main.async {
+                                        if selectedEntityId == entity.entityID {
+                                            selectedEntityId = nil
+                                            onEntitySelected(nil)
+                                        } else {
+                                            selectedEntityId = entity.entityID
+                                            onEntitySelected(entity)
+                                            if entity.unviewed {
+                                                Task {
+                                                    await viewModel.updateEntityViewedStatus(entity.entityID)
+                                                }
                                             }
                                         }
                                     }
