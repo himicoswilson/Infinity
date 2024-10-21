@@ -18,57 +18,21 @@ struct PostPageView: View {
                 .fontWeight(.bold)
                 .padding(.horizontal)
                 .padding(.vertical, 5)
+
+            EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected)
+            .padding(.horizontal)
+            .padding(.vertical, 5)
+        
+            Divider()
             
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 15) {
-                    EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected)
-                        .padding(.horizontal)
-                        .padding(.vertical, 5)
-                    
-                    Divider()
-                    
-                    if let errorMessage = postViewModel.errorMessage {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .padding()
-                    } else if (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts).isEmpty && !postViewModel.isLoading {
-                        Text("没有可用的帖子")
-                            .padding()
-                    } else {
-                        VStack(spacing: 25) {
-                            ForEach(postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts, id: \.id) { post in
-                                PostCardView(postdto: post)
-                                    .onAppear {
-                                        if post.id == (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts).last?.id {
-                                            if postViewModel.isShowingEntityPosts {
-                                                postViewModel.fetchPostsByEntity(entityId: selectedEntity!.entityID)
-                                            } else {
-                                                postViewModel.fetchPosts()
-                                            }
-                                        }
-                                    }
-                            }
-                            
-                            if postViewModel.isLoading {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                            }
-                            
-                            if !postViewModel.isLoading && !postViewModel.posts.isEmpty {
-                                Text("没有啦，快去记录一条吧～")
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                            }
-                        }
-                    }
-                }
-            }
-            .refreshable {
-                await refreshData()
-            }
+            PostListView(
+                postViewModel: postViewModel,
+                selectedEntity: $selectedEntity,
+                onLastPostAppear: fetchMorePosts
+            )
+        }
+        .refreshable {
+            await refreshData()
         }
         .padding(.bottom, 10)
         .onAppear{
@@ -114,6 +78,49 @@ struct PostPageView: View {
             // 取消选择实体
             selectedEntity = nil
             postViewModel.isShowingEntityPosts = false
+        }
+    }
+
+    private func fetchMorePosts() {
+        guard !postViewModel.isLoading else { return }
+        if !postViewModel.isLoading && postViewModel.hasMorePosts {
+            if postViewModel.isShowingEntityPosts {
+                postViewModel.fetchPostsByEntity(entityId: selectedEntity!.entityID)
+            } else {
+                postViewModel.fetchPosts()
+            }
+        }
+    }
+}
+
+struct PostListView: View {
+    @ObservedObject var postViewModel: PostViewModel
+    @Binding var selectedEntity: EntityDTO?
+    var onLastPostAppear: () -> Void
+    
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts) { post in
+                    PostCardView(postdto: post)
+                }
+                
+                if postViewModel.hasMorePosts {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .onAppear {
+                            onLastPostAppear()
+                        }
+                } else if !postViewModel.isLoading {
+                    Text("没有啦，快去记录一条吧～")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
+            }
+            .padding(.horizontal)
         }
     }
 }

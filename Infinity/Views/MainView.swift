@@ -105,6 +105,7 @@ struct MainView: View {
 
     func loadInitialData() async {
         await withTaskGroup(of: Void.self) { group in
+            print("加载初始数据")
             group.addTask { await entitiesViewModel.fetchEntities() }
             group.addTask { await postViewModel.fetchPosts(refresh: true) }
         }
