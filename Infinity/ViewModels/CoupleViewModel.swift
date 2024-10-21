@@ -1,3 +1,4 @@
+import SwiftUI
 import Foundation
 
 @MainActor
@@ -11,38 +12,76 @@ class CoupleViewModel: ObservableObject {
         Task {
             do {
                 let userID = UserDefaults.standard.integer(forKey: Constants.UserDefaultsKeys.userID)
-                let fetchedCouple: Couple = try await APIService.shared.fetch(Constants.APIEndpoints.coupleInfo + "\(userID)")
+                let fetchedCouple: Couple = try await APIService.shared.get(Constants.APIEndpoints.coupleInfo + "\(userID)")
                 self.couple = fetchedCouple
                 
-                self.user1 = try await fetchUserInfo(userId: fetchedCouple.userID1)
-                self.user2 = try await fetchUserInfo(userId: fetchedCouple.userID2)
+                self.user1 = try await APIService.shared.get(Constants.APIEndpoints.users + "/\(fetchedCouple.userID1)")
+                self.user2 = try await APIService.shared.get(Constants.APIEndpoints.users + "/\(fetchedCouple.userID2)")
                 
-            } catch let error as APIError {
-                handleError(error)
+            } catch {
+                self.errorMessage = APIService.handleError(error)
+                print("获取信息错误: \(self.errorMessage ?? "未知错误")")
             }
         }
     }
     
-    private func fetchUserInfo(userId: Int) async throws -> User {
-        return try await APIService.shared.fetch(Constants.APIEndpoints.users + "/\(userId)")
+    func uploadBackgroundImage(_ image: UIImage) {
+        Task {
+            guard let imageData = image.jpegData(compressionQuality: 0.8),
+                let coupleId = couple?.coupleID else {
+                    print("无法获取图片数据或 coupleId")
+                    return
+            }
+            
+            let url = Constants.APIEndpoints.uploadCoupleBackground(coupleId)
+            
+            do {
+                let _: EmptyResponse = try await APIService.shared.upload(
+                    url,
+                    method: .put,
+                    files: ["background": imageData],
+                    fileNames: ["background": "background.jpg"],
+                    mimeTypes: ["background": "image/jpeg"],
+                    fileFieldName: "background"
+                )
+                print("背景图片上传成功")
+                DispatchQueue.main.async {
+                    self.fetchCoupleInfo()
+                }
+            } catch {
+                self.errorMessage = APIService.handleError(error)
+                print("背景图片上传失败: \(self.errorMessage ?? "未知错误")")
+            }
+        }
     }
     
-    private func handleError(_ error: APIError) {
-        switch error {
-        case .invalidURL:
-            self.errorMessage = "无效的URL"
-        case .noData:
-            self.errorMessage = "服务器没有返回数据"
-        case .decodingError:
-            self.errorMessage = "数据解码失败"
-        case .encodingError:
-            self.errorMessage = "数据编码失败"
-        case .networkError(let underlyingError):
-            self.errorMessage = "网络错误: \(underlyingError.localizedDescription)"
-        case .httpError(let statusCode):
-            self.errorMessage = "HTTP错误: 状态码 \(statusCode)"
+    func uploadAvatar(image: UIImage, for user: User) {
+        Task {
+            guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+                print("无法获取图片数据")
+                return
+            }
+            
+            let url = Constants.APIEndpoints.uploadUserAvatar(user.userID)
+            
+            do {
+                let _: EmptyResponse = try await APIService.shared.upload(
+                    url,
+                    method: .put,
+                    files: ["avatar": imageData],
+                    fileNames: ["avatar": "avatar.jpg"],
+                    mimeTypes: ["avatar": "image/jpeg"],
+                    fileFieldName: "avatar"
+                )
+                print("头像上传成功")
+                DispatchQueue.main.async {
+                    self.fetchCoupleInfo()
+                }
+            } catch {
+                self.errorMessage = APIService.handleError(error)
+                print("头像上传失败: \(self.errorMessage ?? "未知错误")")
+            }
         }
-        print("获取信息错误: \(self.errorMessage ?? "未知错误")")
     }
 
     var currentUser: User {

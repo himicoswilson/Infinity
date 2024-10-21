@@ -69,121 +69,57 @@ class CreatePostViewModel: ObservableObject {
         )
     }
     
-    private func handleError(_ error: APIError) {
-        switch error {
-        case .invalidURL:
-            self.errorMessage = "无效的URL"
-        case .noData:
-            self.errorMessage = "服务器没有返回数据"
-        case .decodingError:
-            self.errorMessage = "数据解码失败"
-        case .encodingError:
-            self.errorMessage = "数据编码失败"
-        case .networkError(let underlyingError):
-            self.errorMessage = "网络错误: \(underlyingError.localizedDescription)"
-        case .httpError(let statusCode):
-            self.errorMessage = "HTTP错误: 状态码 \(statusCode)"
-        }
-        print("获取实体错误: \(self.errorMessage ?? "未知错误")")
-    }
-    
     func createPost() {
-        isLoading = true
-        showError = false
-        
-        guard let url = URL(string: Constants.APIEndpoints.posts) else {
-            self.errorMessage = "无效的URL"
-            isLoading = false
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        // 添加token到请求头
-        if let token = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.token) {
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        } else {
-            print("无法获取token")
-            return
-        }
+        Task {
+            isLoading = true
+            showError = false
+            
+            do {
+                let entitiesData = selectedEntities.map { ["entityID": $0] }
 
-        var body = Data()
-        
-        // 添加内容
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"content\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(content)\r\n".data(using: .utf8)!)
-        
-        // 添加标签
-//        let tags = [["tagID": 1], ["tagID": 2]] // 示例标签，需要根据实际情况修改
-//        let tagsData = try? JSONEncoder().encode(tags)
-//        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-//        body.append("Content-Disposition: form-data; name=\"tags\"\r\n\r\n".data(using: .utf8)!)
-//        body.append(tagsData ?? Data())
-//        body.append("\r\n".data(using: .utf8)!)
-        
-        // 添加实体
-        let entitiesData = selectedEntities.map { ["entityID": $0] }
-        let entitiesJSONData = try? JSONEncoder().encode(entitiesData)
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"entities\"\r\n\r\n".data(using: .utf8)!)
-        body.append(entitiesJSONData ?? Data())
-        body.append("\r\n".data(using: .utf8)!)
-        
-        // 添加图片
-        for (index, image) in selectedImages.enumerated() {
-            if let imageData = image.jpegData(compressionQuality: 0.8) {
-                body.append("--\(boundary)\r\n".data(using: .utf8)!)
-                body.append("Content-Disposition: form-data; name=\"images\"; filename=\"image\(index).jpg\"\r\n".data(using: .utf8)!)
-                body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-                body.append(imageData)
-                body.append("\r\n".data(using: .utf8)!)
-            }
-        }
-        
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                self.isLoading = false
+                var files: [String: Data] = [:]
+                let fileNames: [String: String] = [:]
+                let mimeTypes: [String: String] = [:]
                 
-                if let error = error {
-                    self.errorMessage = "网络错误: \(error.localizedDescription)"
-                    self.showError = true
-                    print("网络请求错误: \(error)")
-                    return
+                for (index, image) in selectedImages.enumerated() {
+                    if let imageData = image.jpegData(compressionQuality: 0.8) {
+                        files["image\(index)"] = imageData
+                    }
                 }
                 
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    self.errorMessage = "无效的响应"
-                    self.showError = true
-                    print("无效的响应: \(String(describing: response))")
-                    return
-                }
+                let parameters: [String: Any] = [
+                    "content": content,
+                    "entities": entitiesData
+                ]
                 
-                guard (200...299).contains(httpResponse.statusCode) else {
-                    self.errorMessage = "服务器错误: \(httpResponse.statusCode)"
-                    self.showError = true
-                    print("服务器错误: 状态码 \(httpResponse.statusCode)")
-                    return
-                }
+                print("开始上传帖子，参数：\(parameters)")
+                print("上传的图片数量：\(selectedImages.count)")
                 
-                if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                    print("收到的响应数据: \(responseString)")
-                }
+                let _: EmptyResponse = try await APIService.shared.upload(
+                    Constants.APIEndpoints.posts,
+                    method: .post,
+                    parameters: parameters,
+                    files: files,
+                    fileNames: fileNames,
+                    mimeTypes: mimeTypes,
+                    fileFieldName: "images"
+                )
                 
-                print("发送成功")
+                print("帖子创建成功")
                 self.postCreated = true
                 self.resetState()
                 self.onPostCreated?()
+            } catch {
+                print("帖子创建失败：\(error)")
+                if let apiError = error as? APIError {
+                    print("API错误详情：\(apiError)")
+                }
+                self.errorMessage = APIService.handleError(error)
+                self.showError = true
             }
-        }.resume()
+            
+            self.isLoading = false
+        }
     }
     
     private func resetState() {

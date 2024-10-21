@@ -8,10 +8,24 @@
 
 /* Begin PBXBuildFile section */
 		8A0ECDE12CB9E9EA00F1966C /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 8A0ECDE02CB9E9EA00F1966C /* Kingfisher */; };
+		8A3D9C072CC615E600F285A2 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 8A3D9C062CC615E600F285A2 /* Alamofire */; };
 		8A52E6322CBA80C900713A56 /* .gitattributes in Resources */ = {isa = PBXBuildFile; fileRef = 8A52E6012CBA80C900713A56 /* .gitattributes */; };
 		8A52E6332CBA80C900713A56 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 8A52E6022CBA80C900713A56 /* .gitignore */; };
 		8A52E6342CBA80C900713A56 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 8A52E6042CBA80C900713A56 /* LICENSE */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8A1EEFEB2CC5FA9A004F35BD /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		8A52E5932CBA809500713A56 /* Infinity.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Infinity.xcodeproj; sourceTree = "<group>"; };
@@ -35,6 +49,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8A0ECDE12CB9E9EA00F1966C /* Kingfisher in Frameworks */,
+				8A3D9C072CC615E600F285A2 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +61,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		8A8F5C9B2CC613D200F309A5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		8AD39C8F2CB53AF80077C358 = {
 			isa = PBXGroup;
 			children = (
@@ -54,6 +76,7 @@
 				8A52E6022CBA80C900713A56 /* .gitignore */,
 				8A52E6042CBA80C900713A56 /* LICENSE */,
 				8AE539722CBCD4560093ECD3 /* Infinity.app */,
+				8A8F5C9B2CC613D200F309A5 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -67,6 +90,7 @@
 				8AD39C942CB53AF80077C358 /* Sources */,
 				8AD39C952CB53AF80077C358 /* Frameworks */,
 				8AD39C962CB53AF80077C358 /* Resources */,
+				8A1EEFEB2CC5FA9A004F35BD /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -78,6 +102,7 @@
 			name = Infinity;
 			packageProductDependencies = (
 				8A0ECDE02CB9E9EA00F1966C /* Kingfisher */,
+				8A3D9C062CC615E600F285A2 /* Alamofire */,
 			);
 			productName = Unbroken;
 			productReference = 8AE539722CBCD4560093ECD3 /* Infinity.app */;
@@ -109,6 +134,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				8A0ECDDF2CB9E9EA00F1966C /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				8A3D9C052CC615E600F285A2 /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8AD39C8F2CB53AF80077C358;
@@ -363,6 +389,14 @@
 				minimumVersion = 8.0.3;
 			};
 		};
+		8A3D9C052CC615E600F285A2 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.10.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -370,6 +404,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 8A0ECDDF2CB9E9EA00F1966C /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		8A3D9C062CC615E600F285A2 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8A3D9C052CC615E600F285A2 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

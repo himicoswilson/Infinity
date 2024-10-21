@@ -30,7 +30,7 @@ class PostViewModel: ObservableObject {
             self.isLoading = true
             do {
                 let endpoint = "\(Constants.APIEndpoints.posts)?page=\(currentPage)&limit=\(postsPerPage)"
-                let fetchedPosts: [PostDTO] = try await APIService.shared.fetch(endpoint)
+                let fetchedPosts: [PostDTO] = try await APIService.shared.get(endpoint)
                 if Task.isCancelled { return }
                 
                 let updatedPosts = fetchedPosts.map { post in
@@ -48,13 +48,9 @@ class PostViewModel: ObservableObject {
                 self.hasMorePosts = fetchedPosts.count == postsPerPage
                 self.currentPage += 1
                 self.errorMessage = nil
-            } catch let error as APIError {
-                if !Task.isCancelled {
-                    handleError(error)
-                }
             } catch {
                 if !Task.isCancelled {
-                    handleUnexpectedError(error)
+                    self.errorMessage = APIService.handleError(error)
                 }
             }
             
@@ -62,29 +58,6 @@ class PostViewModel: ObservableObject {
                 self.isLoading = false
             }
         }
-    }
-
-    private func handleError(_ error: APIError) {
-        switch error {
-        case .invalidURL:
-            self.errorMessage = "无效的URL"
-        case .noData:
-            self.errorMessage = "服务器没有返回数据"
-        case .decodingError:
-            self.errorMessage = "数据解码失败"
-        case .encodingError:
-            self.errorMessage = "数据编码失败"
-        case .networkError(let underlyingError):
-            self.errorMessage = "网络错误: \(underlyingError.localizedDescription)"
-        case .httpError(let statusCode):
-            self.errorMessage = "HTTP错误: 状态码 \(statusCode)"
-        }
-        print("获取帖子错误: \(self.errorMessage ?? "未知错误")")
-    }
-    
-    private func handleUnexpectedError(_ error: Error) {
-        self.errorMessage = "发生未预期的错误: \(error.localizedDescription)"
-        print("获取帖子时发生未预期的错误: \(error)")
     }
 
     func fetchPostsByEntity(entityId: Int, refresh: Bool = false) {
@@ -104,7 +77,7 @@ class PostViewModel: ObservableObject {
 
             do {
                 let endpoint = Constants.APIEndpoints.postByEntityId(entityId, currentPage, postsPerPage)
-                let fetchedPosts: [PostDTO] = try await APIService.shared.fetch(endpoint)
+                let fetchedPosts: [PostDTO] = try await APIService.shared.get(endpoint)
                 if Task.isCancelled { return }
                 
                 let updatedPosts = fetchedPosts.map { post in
@@ -122,13 +95,9 @@ class PostViewModel: ObservableObject {
                 self.hasMorePosts = fetchedPosts.count == postsPerPage
                 self.currentPage += 1
                 self.errorMessage = nil
-            } catch let error as APIError {
-                if !Task.isCancelled {
-                    handleError(error)
-                }
             } catch {
                 if !Task.isCancelled {
-                    handleUnexpectedError(error)
+                    self.errorMessage = APIService.handleError(error)
                 }
             }
             

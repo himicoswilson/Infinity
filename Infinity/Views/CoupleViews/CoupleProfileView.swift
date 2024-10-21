@@ -48,13 +48,17 @@ struct CoupleProfileView: View {
                     }
                     
                     HStack(spacing: 20) {
-                        UserInfoView(user: coupleViewModel.currentUser)
+                        UserInfoView(user: coupleViewModel.currentUser, uploadAvatar: { image in
+                            coupleViewModel.uploadAvatar(image: image, for: coupleViewModel.currentUser)
+                        })
                         
                         SwiftUI.Image(systemName: "heart.fill")
                             .foregroundColor(SwiftUI.Color.red)
                             .font(SwiftUI.Font.system(size: 40))
                         
-                        UserInfoView(user: coupleViewModel.lover)
+                        UserInfoView(user: coupleViewModel.lover, uploadAvatar: { image in
+                            coupleViewModel.uploadAvatar(image: image, for: coupleViewModel.lover)
+                        })
                     }
                     .padding()
                     .offset(y: -30)
@@ -109,66 +113,17 @@ struct CoupleProfileView: View {
     }
     
     private func uploadBackgroundImage() {
-        guard let image = selectedBackgroundImage,
-              let imageData = image.jpegData(compressionQuality: 0.8),
-              let coupleId = coupleViewModel.couple?.coupleID else {
-            print("无法获取图片数据或 coupleId")
+        guard let image = selectedBackgroundImage else {
+            print("没有选择背景图片")
             return
         }
-        
-        let url = URL(string: Constants.APIEndpoints.uploadCoupleBackground(coupleId))!
-        
-        print("请求URL: \(url.absoluteString)") // 打印URL以进行调试
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        
-        if let token = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.token) {
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        } else {
-            print("无法获取token")
-            return
-        }
-        
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"background\"; filename=\"background.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("上传背景图片错误: \(error.localizedDescription)")
-                return
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("服务器响应状态码: \(httpResponse.statusCode)")
-                if httpResponse.statusCode == 200 {
-                    print("背景图片上传成功")
-                    DispatchQueue.main.async {
-                        coupleViewModel.fetchCoupleInfo()  // 刷新数据
-                    }
-                } else {
-                    print("背景图片上传失败")
-                }
-            }
-            
-            if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                print("服务器响应内容: \(responseString)")
-            }
-        }.resume()
+        coupleViewModel.uploadBackgroundImage(image)
     }
 }
 
 struct UserInfoView: View {
     let user: User
+    let uploadAvatar: (UIImage) -> Void
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var showConfirmationDialog = false
@@ -198,7 +153,9 @@ struct UserInfoView: View {
             }
             .confirmationDialog("上传头像?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
                 Button("确认上传") {
-                    uploadAvatar()
+                    if let image = selectedImage {
+                        uploadAvatar(image)
+                    }
                 }
                 Button("取消", role: .cancel) {
                     selectedImage = nil
@@ -208,63 +165,6 @@ struct UserInfoView: View {
             Text(user.nickName ?? user.userName)
                 .font(.headline)
         }
-    }
-    
-    private func uploadAvatar() {
-        print("uploadAvatar 函数被调用")
-        guard let image = selectedImage, let imageData = image.jpegData(compressionQuality: 0.8) else {
-            print("无法获取图片数据")
-            return
-        }
-        
-        print("准备上传图片，大小：\(imageData.count) 字节")
-        
-        let url = URL(string: Constants.APIEndpoints.uploadUserAvatar(user.userID))!
-        print("网络请求URL: \(url)")
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        
-        // 添加token到请求头
-        if let token = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.token) {
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        } else {
-            print("无法获取token")
-            return
-        }
-        
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"avatar\"; filename=\"avatar.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
-        print("开始网络请求")
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("上传头像错误: \(error.localizedDescription)")
-                return
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("服务器响应状态码: \(httpResponse.statusCode)")
-                if httpResponse.statusCode == 200 {
-                    print("头像上传成功")
-                    // 这里可以添加更新本地头像URL的逻辑
-                } else {
-                    print("头像上传失败")
-                }
-            }
-            
-            if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                print("服务器响应内容: \(responseString)")
-            }
-        }.resume()
     }
 }
 

@@ -9,35 +9,31 @@ class UserViewModel: ObservableObject {
         Task {
             do {
                 let userID = UserDefaults.standard.integer(forKey: Constants.UserDefaultsKeys.userID)
-                let fetchedUser: User = try await APIService.shared.fetch("\(Constants.APIEndpoints.users)/\(userID)")
+                let fetchedUser: User = try await APIService.shared.get("\(Constants.APIEndpoints.users)/\(userID)")
                 self.user = fetchedUser
-            } catch let error as APIError {
-                switch error {
-                case .invalidURL:
-                    self.errorMessage = "无效的URL"
-                case .noData:
-                    self.errorMessage = "服务器没有返回数据"
-                case .decodingError:
-                    self.errorMessage = "数据解码失败"
-                case .encodingError:
-                    self.errorMessage = "数据编码失败"
-                case .networkError(let underlyingError):
-                    self.errorMessage = "网络错误: \(underlyingError.localizedDescription)"
-                case .httpError(let statusCode):
-                    self.errorMessage = "HTTP错误: 状态码 \(statusCode)"
-                }
+            } catch {
+                self.errorMessage = APIService.handleError(error)
                 print("获取用户信息错误: \(self.errorMessage ?? "未知错误")")
             }
         }
     }
 
     func updateUserInfo(_ updatedUser: User) {
-        // 实现更新用户信息的逻辑
+//        Task {
+//            do {
+//                let userID = UserDefaults.standard.integer(forKey: Constants.UserDefaultsKeys.userID)
+//                let _: User = try await APIService.shared.put("\(Constants.APIEndpoints.users)/\(userID)", parameters: updatedUser.dictionary)
+//                self.user = updatedUser
+//            } catch {
+//                self.errorMessage = APIService.handleError(error)
+//                print("更新用户信息错误: \(self.errorMessage ?? "未知错误")")
+//            }
+//        }
     }
 
     func logout() {
-        // 实现登出逻辑
         UserDefaults.standard.removeObject(forKey: Constants.UserDefaultsKeys.userID)
         UserDefaults.standard.removeObject(forKey: Constants.UserDefaultsKeys.username)
+        UserDefaults.standard.removeObject(forKey: Constants.UserDefaultsKeys.token)
     }
 }
