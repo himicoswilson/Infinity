@@ -22,12 +22,14 @@ class APIService {
         
         return try await withCheckedThrowingContinuation { continuation in
             AF.request(url, method: method, parameters: parameters, encoding: encoding, headers: headers)
-                .validate()
+                .validate(statusCode: 200..<300)  // 验证状态码在200-299之间
                 .responseDecodable(of: T.self) { response in
                     switch response.result {
                     case .success(let value):
                         continuation.resume(returning: value)
                     case .failure(let error):
+                        print("响应状态码: \(response.response?.statusCode ?? 0)")
+                        print("响应数据: \(String(data: response.data ?? Data(), encoding: .utf8) ?? "")")
                         continuation.resume(throwing: self.handleError(error, statusCode: response.response?.statusCode, data: response.data))
                     }
                 }
@@ -131,7 +133,12 @@ class APIService {
         if let data = data, let serverError = try? JSONDecoder().decode(ServerError.self, from: data) {
             return APIError.serverError(serverError.message)
         } else if let statusCode = statusCode {
-            return APIError.httpError(statusCode)
+            if statusCode >= 200 && statusCode < 300 {
+                // 如果状态码在200-299之间，尝试解码为T类型
+                return APIError.decodingError
+            } else {
+                return APIError.httpError(statusCode)
+            }
         } else {
             return APIError.networkError(error.localizedDescription)
         }

@@ -28,6 +28,9 @@ struct Constants {
         static let coupleInfo = "\(baseURL)/couples/user/"
         static let uploadCoupleBackground = { (coupleId: Int) in "\(baseURL)/couples/\(coupleId)" }
         
+        // 评论相关 API
+        static let comments = "\(baseURL)/comments"
+        
         // 实体相关 API
         static let entities = "\(baseURL)/entities"
         static let updateLastViewed = { (entityId: Int) in "\(baseURL)/entities/\(entityId)/last-viewed" }

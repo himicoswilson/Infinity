@@ -100,9 +100,19 @@ struct PostListView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 10) {
+            LazyVStack(spacing: 0) {
                 ForEach(postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts) { post in
-                    PostCardView(postdto: post)
+                    VStack(spacing: 0) {
+                        PostCardView(postdto: post)
+                            .padding(.vertical, 16)
+                            .padding(.horizontal)
+                        
+                        if post.id != (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity.last?.id : postViewModel.posts.last?.id) {
+                            Divider()
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.vertical, -2)
                 }
                 
                 if postViewModel.hasMorePosts {
@@ -120,7 +130,7 @@ struct PostListView: View {
                         .padding()
                 }
             }
-            .padding(.horizontal)
         }
+        .padding(.top, -8)
     }
 }

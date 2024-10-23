@@ -4,6 +4,7 @@ struct CommentDTO: Identifiable, Codable {
     let content: String
     let userID: Int
     let userName: String
+    let nickName: String?
     let userAvatar: String?
     let postID: Int
     let parentCommentID: Int?

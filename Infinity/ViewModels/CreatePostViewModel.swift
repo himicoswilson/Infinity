@@ -92,9 +92,6 @@ class CreatePostViewModel: ObservableObject {
                     "entities": entitiesData
                 ]
                 
-                print("开始上传帖子，参数：\(parameters)")
-                print("上传的图片数量：\(selectedImages.count)")
-                
                 let _: EmptyResponse = try await APIService.shared.upload(
                     Constants.APIEndpoints.posts,
                     method: .post,
@@ -104,8 +101,7 @@ class CreatePostViewModel: ObservableObject {
                     mimeTypes: mimeTypes,
                     fileFieldName: "images"
                 )
-                
-                print("帖子创建成功")
+
                 self.postCreated = true
                 self.resetState()
                 self.onPostCreated?()
