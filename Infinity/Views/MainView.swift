@@ -10,6 +10,7 @@ struct MainView: View {
     @State private var isLoading = true
     @Environment(\.colorScheme) var colorScheme
     @State private var opacity = 0.0
+    @StateObject private var refreshManager = RefreshManager()
 
     var body: some View {
         Group {
@@ -33,6 +34,12 @@ struct MainView: View {
                 checkAuthAndLoadData()
             }
         }
+        .environmentObject(refreshManager)
+        .onChange(of: refreshManager.shouldRefresh) { _ in
+            Task {
+                await loadInitialData()
+            }
+        }
     }
 
     private var mainContent: some View {
@@ -45,6 +52,7 @@ struct MainView: View {
                             .foregroundColor(colorScheme == .dark ? .white : .black)
                     }
                     .tag(0)
+                    .environmentObject(coupleViewModel)
 
                 BirthdayCardView()
                     .tag(1)

@@ -183,6 +183,9 @@ struct CreatePostView: View {
                 self.showCreatePost = false
             }
         }
+        .onAppear {
+            focusedField = true
+        }
     }
 }
 
