@@ -7,13 +7,13 @@ class CreateCommentViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var commentCreated: Bool = false
     
-    let postdto: PostDTO
-    let parentCommentID: String?
+    let postdto: PostDTO?
+    let parentComment: CommentDTO?
     var onCommentCreated: (() -> Void)?
     
-    init(postdto: PostDTO, parentCommentID: String? = nil, onCommentCreated: @escaping () -> Void) {
+    init(postdto: PostDTO? = nil, parentComment: CommentDTO? = nil, onCommentCreated: @escaping () -> Void) {
         self.postdto = postdto
-        self.parentCommentID = parentCommentID
+        self.parentComment = parentComment
         self.onCommentCreated = onCommentCreated
     }
     
@@ -24,11 +24,11 @@ class CreateCommentViewModel: ObservableObject {
         
         var parameters: [String: Any] = [
             "content": commentText,
-            "postID": postdto.id
+            "postID": (postdto?.id ?? parentComment?.postID)!
         ]
         
-        if let parentCommentID = parentCommentID {
-            parameters["parentCommentID"] = parentCommentID
+        if let parentComment = parentComment {
+            parameters["parentCommentID"] = parentComment.commentID
         }
         
         Task {

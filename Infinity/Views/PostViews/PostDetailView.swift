@@ -10,12 +10,6 @@ struct PostDetailView: View {
                 Text(post.content)
                     .font(.body)
                 
-               
-                
-                Text(post.postDateTime.formattedString())
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
                 Divider()
                 
                 ForEach(viewModel.comments) { comment in
@@ -37,9 +31,6 @@ struct CommentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(comment.content)
-            Text(comment.commentDateTime.formattedString())
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
     }
 }
