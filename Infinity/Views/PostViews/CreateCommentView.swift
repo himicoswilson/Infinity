@@ -46,11 +46,13 @@ struct CreateCommentView: View {
                         .fontWeight(.bold)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("发布") {
-                        viewModel.sendComment()
-                    }
-                    .foregroundColor(.primary)
-                    .disabled(viewModel.commentText.isEmpty || viewModel.isLoading)
+                    Text("发布")
+                        .foregroundColor(viewModel.commentText.isEmpty || viewModel.isLoading ? .gray : .primary)
+                        .onTapGesture {
+                            if !viewModel.commentText.isEmpty && !viewModel.isLoading {
+                                viewModel.sendComment()
+                            }
+                        }
                 }
             }
             .onAppear {
