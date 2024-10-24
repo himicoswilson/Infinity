@@ -43,46 +43,21 @@ struct MainView: View {
     }
 
     private var mainContent: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $selectedTab) {
-                PostPageView(entitiesViewModel: entitiesViewModel, postViewModel: postViewModel)
-                    .tabItem {
-                        SwiftUI.Image(systemName: "seal.fill")
-                            .renderingMode(.template)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                    }
-                    .tag(0)
-                    .environmentObject(coupleViewModel)
-
-                BirthdayCardView()
-                    .tag(1)
-                
-                CoupleProfileView(coupleViewModel: coupleViewModel)
-                    .tabItem {
-                        SwiftUI.Image(systemName: "heart")
-                            .renderingMode(.template)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                    }
-                    .tag(2)
-            }
-            .accentColor(colorScheme == .dark ? .white : .black)
-
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        showCreatePost = true
-                    }) {
-                        SwiftUI.Image(systemName: "plus")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(colorScheme == .dark ? .black : .white)
-                            .frame(width: 56, height: 40)
-                            .background(colorScheme == .dark ? Color.white : Color.black)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-                    Spacer()
+        CustomTabView(selectedTab: $selectedTab, showCreatePost: {
+            showCreatePost = true
+        }) {
+            ZStack {
+                switch selectedTab {
+                case 0:
+                    PostPageView(entitiesViewModel: entitiesViewModel, postViewModel: postViewModel)
+                        .environmentObject(coupleViewModel)
+                case 1:
+                    BirthdayCardView()
+                case 2:
+                    CoupleProfileView(coupleViewModel: coupleViewModel)
+                default:
+                    EmptyView()
                 }
-                .padding(.bottom, 8)
             }
         }
         .opacity(opacity)

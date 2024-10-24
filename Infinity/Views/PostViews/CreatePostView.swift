@@ -27,22 +27,21 @@ struct CreatePostView: View {
             
             // 顶部
             HStack {
-                Button("取消") {
-                    withAnimation {
-                        self.showCreatePost = false
+                Text("取消")
+                    .foregroundColor(.primary)
+                    .onTapGesture {
+                        withAnimation {
+                            self.showCreatePost = false
+                        }
                     }
-                }
                 Spacer()
-                Button("发布") {
-                    viewModel.createPost()
-                }
-                .bold()
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.blue)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .disabled(viewModel.isLoading)
+                Text("发布")
+                    .foregroundColor(viewModel.isLoading ? .gray : .primary)
+                    .onTapGesture {
+                        if !viewModel.isLoading {
+                            viewModel.createPost()
+                        }
+                    }
             }
             .padding(.horizontal)
             

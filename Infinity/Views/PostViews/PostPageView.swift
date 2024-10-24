@@ -5,6 +5,14 @@ struct PostPageView: View {
     @ObservedObject private var entitiesViewModel: EntitiesViewModel
     @State private var refreshTask: Task<Void, Never>?
     @State private var selectedEntity: EntityDTO?
+    @State private var scrollOffset: CGFloat = 0
+    @State private var showHeader: Bool = true
+    @State private var topSafeAreaHeight: CGFloat = 0
+    @State private var lastScrollValue: CGFloat = 0
+    @State private var lastScrollTime: Date = Date()
+    @State private var scrollDirection: ScrollDirection = .none
+    @State private var accumulatedScrollDistance: CGFloat = 0
+    @State private var scrollThreshold: CGFloat = 50
     
     init(entitiesViewModel: EntitiesViewModel, postViewModel: PostViewModel) {
         self.entitiesViewModel = entitiesViewModel
@@ -12,41 +20,110 @@ struct PostPageView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("Infinity")
-                .font(.title)
-                .fontWeight(.bold)
-                .padding(.horizontal)
-                .padding(.vertical, 5)
-
-            EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected)
-            .padding(.horizontal)
-            .padding(.vertical, 5)
-        
-            Divider()
-            
-            PostListView(
-                postViewModel: postViewModel,
-                selectedEntity: $selectedEntity,
-                onLastPostAppear: fetchMorePosts
-            )
-        }
-        .refreshable {
-            await refreshData()
-        }
-        .padding(.bottom, 10)
-        .onAppear{
-            Task{
-                if postViewModel.posts.isEmpty {
-                    postViewModel.fetchPosts(refresh: true)
+        GeometryReader { geometry in
+            VStack(alignment: .leading, spacing: 0) {
+                if showHeader {
+                    VStack {
+                        HStack {
+                            Text("Infinity")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .padding(.leading, 5) // 额外的左侧间距
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 5)
+                        
+                        EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected)
+                            .padding(.horizontal)
+                            .padding(.vertical, 5)
+                        
+                        Divider()
+                            .padding(.top, 8)
+                    }
+                    .transition(.move(edge: .top))
                 }
-                if entitiesViewModel.entities.isEmpty{
-                    await entitiesViewModel.fetchEntities()
+                
+                ScrollView {
+                    GeometryReader { geometry in
+                        Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
+                    }
+                    .frame(height: 0)
+
+                    PostListView(
+                        postViewModel: postViewModel,
+                        selectedEntity: $selectedEntity,
+                        onLastPostAppear: fetchMorePosts
+                    )
+                }
+                .coordinateSpace(name: "scroll")
+                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                    let currentTime = Date()
+                    let timeDifference = currentTime.timeIntervalSince(lastScrollTime)
+                    let scrollDelta = value - lastScrollValue
+                    
+                    if timeDifference > 0.1 { // 50毫秒
+                        accumulatedScrollDistance += scrollDelta
+                        
+                        let newDirection: ScrollDirection
+                        if scrollDelta > 0 {
+                            newDirection = .down
+                        } else if scrollDelta < 0 {
+                            newDirection = .up
+                        } else {
+                            newDirection = .none
+                        }
+                        
+                        if newDirection != scrollDirection {
+                            scrollDirection = newDirection
+                            accumulatedScrollDistance = scrollDelta // 重置累积距离
+                        }
+                        
+                        // 只有当累积滚动距离超过阈值时才触发头部的显示/隐藏
+                        if abs(accumulatedScrollDistance) > scrollThreshold {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                // 如果在顶部或接近顶部，始终显示头部
+                                if value > -10 {
+                                    showHeader = true
+                                } else {
+                                    showHeader = scrollDirection == .down
+                                }
+                            }
+                            accumulatedScrollDistance = 0 // 重置累积距离
+                        }
+                        
+                        lastScrollTime = currentTime
+                        lastScrollValue = value
+                    }
+                }
+                .refreshable {
+                    await refreshData()
                 }
             }
-        }
-        .onDisappear {
-            refreshTask?.cancel()
+            .safeAreaInset(edge: .top) {
+                if !showHeader {
+                    BlurView(style: .regular)
+                        .frame(height: topSafeAreaHeight)
+                        .frame(maxWidth: .infinity)
+                        .offset(y: -topSafeAreaHeight)
+                }
+            }
+            .padding(.bottom, 10)
+            .onAppear {
+                topSafeAreaHeight = geometry.safeAreaInsets.top
+                Task{
+                    if postViewModel.posts.isEmpty {
+                        postViewModel.fetchPosts(refresh: true)
+                    }
+                    if entitiesViewModel.entities.isEmpty{
+                        await entitiesViewModel.fetchEntities()
+                    }
+                }
+            }
+            .onDisappear {
+                refreshTask?.cancel()
+            }
+            .animation(.easeOut(duration: 0.3), value: showHeader)
         }
     }
     
@@ -82,13 +159,12 @@ struct PostPageView: View {
     }
 
     private func fetchMorePosts() {
-        guard !postViewModel.isLoading else { return }
-        if !postViewModel.isLoading && postViewModel.hasMorePosts {
-            if postViewModel.isShowingEntityPosts {
-                postViewModel.fetchPostsByEntity(entityId: selectedEntity!.entityID)
-            } else {
-                postViewModel.fetchPosts()
-            }
+        guard !postViewModel.isLoading && postViewModel.hasMorePosts else { return }
+
+        if postViewModel.isShowingEntityPosts {
+            postViewModel.fetchPostsByEntity(entityId: selectedEntity!.entityID)
+        } else {
+            postViewModel.fetchPosts()
         }
     }
 }
@@ -99,38 +175,46 @@ struct PostListView: View {
     var onLastPostAppear: () -> Void
     
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts) { post in
-                    VStack(spacing: 0) {
-                        PostCardView(postdto: post)
-                            .padding(.vertical, 16)
-                            .padding(.horizontal)
-                        
-                        if post.id != (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity.last?.id : postViewModel.posts.last?.id) {
-                            Divider()
-                                .frame(maxWidth: .infinity)
-                        }
+        LazyVStack(spacing: 0) {
+            ForEach(postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts) { post in
+                VStack(spacing: 0) {
+                    PostCardView(postdto: post)
+                        .padding(.vertical, 16)
+                        .padding(.horizontal)
+                    
+                    if post.id != (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity.last?.id : postViewModel.posts.last?.id) {
+                        Divider()
+                            .frame(maxWidth: .infinity)
                     }
-                    .padding(.vertical, -2)
                 }
-                
-                if postViewModel.hasMorePosts {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .onAppear {
-                            onLastPostAppear()
-                        }
-                } else if !postViewModel.isLoading {
-                    Text("没有啦，快去记录一条吧～")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                }
+                .padding(.vertical, -2)
+            }
+            
+            if postViewModel.hasMorePosts {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .onAppear {
+                        onLastPostAppear()
+                    }
+            } else if !postViewModel.isLoading {
+                Text("没有啦，快去记录一条吧～")
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity)
+                    .padding()
             }
         }
-        .padding(.top, -8)
     }
+}
+
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value += nextValue()
+    }
+}
+
+enum ScrollDirection {
+    case up, down, none
 }
