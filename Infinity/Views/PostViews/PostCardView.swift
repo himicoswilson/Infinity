@@ -57,7 +57,7 @@ struct PostCardView: View {
                             .frame(width: 2)
                             .cornerRadius(1)
                             .padding(.leading, 24)
-                            .frame(height: geometry.size.height + 233)
+                            .frame(height: geometry.size.height + 241)
                             .offset(y: 60)
                     }
                 }
@@ -86,10 +86,21 @@ struct PostCardView: View {
 
                     // 评论按钮
                     Button(action: {
+                        let impact = UIImpactFeedbackGenerator(style: .light)
+                        impact.impactOccurred()
                         showCreateCommentView = true
                     }) {
-                        SwiftUI.Image(systemName: "bubble.right")
-                            .font(.system(size: 15))
+                        HStack {
+                            SwiftUI.Image(systemName: "bubble.right")
+                                .font(.system(size: 12))
+                            Text("评论")
+                                .font(.footnote)
+                        }
+                        .foregroundColor(.gray)
+                        .padding(.vertical, 5)
+                        .padding(.horizontal, 10)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(15)
                     }
                     .padding(.leading, 60)
                 }
@@ -98,7 +109,7 @@ struct PostCardView: View {
             
             // 评论区
             if !postdto.comments.isEmpty {
-                PostCommentView(comments: postdto.comments)
+                PostCommentView(postdto: postdto, comments: postdto.comments)
             }
         }
         .fullScreenCover(isPresented: $showImagePreview) {
@@ -140,29 +151,31 @@ struct LocationAndTagsView: View {
 }
 
 struct PostCommentView: View {
+    let postdto: PostDTO
     var comments: [CommentDTO]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let latestComment = findLatestTopLevelComment() {
                 VStack(spacing: 0) {
-                    CommentItemView(comment: latestComment, allComments: comments)
+                    CommentItemView(postdto: postdto, comment: latestComment, allComments: comments)
                     
                     let replies = comments.filter { $0.parentCommentID == latestComment.commentID }
                     if let oldestReply = replies.last {
-                        // 添加连接线
-                        HStack(spacing: 0) {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.5))
-                                .frame(width: 2)
-                                .cornerRadius(1)
-                                .frame(height: 20)
-                                .padding(.leading, 24)
-                            Spacer()
+                        // 左侧的矩形直线
+                        GeometryReader { geometry in
+                            HStack(spacing: 0) {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.5))
+                                    .frame(width: 2)
+                                    .cornerRadius(1)
+                                    .padding(.leading, 24)
+                                    .frame(height: geometry.size.height + 32)
+                                    .offset(y: -26)
+                            }
                         }
-                        .frame(height: 10)
                         
-                        CommentItemView(comment: oldestReply, allComments: comments)
+                        CommentItemView(postdto: postdto, comment: oldestReply, allComments: comments)
                     }
                 }
             }
@@ -179,73 +192,79 @@ struct PostCommentView: View {
 }
 
 struct CommentItemView: View {
+    let postdto: PostDTO
     let comment: CommentDTO
     let allComments: [CommentDTO]
+    @State private var isLongPressed = false
+    @State private var showReplyView = false
+    @EnvironmentObject var refreshManager: RefreshManager
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // 头像
-            KFImage(URL(string: comment.userAvatar ?? ""))
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 50, height: 50)
-                .clipShape(Circle())
-            
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Text(comment.nickName ?? comment.userName)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                    Spacer()
-                    Text(formatDate(from: comment.createdAt))
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                        .padding(.horizontal, -8)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .top, spacing: 0) {
+                // 头像
+                KFImage(URL(string: comment.userAvatar ?? ""))
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 50, height: 50)
+                    .clipShape(Circle())
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(comment.nickName ?? comment.userName)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                        Spacer()
+                        Text(Date.formatRelativeTime(from: comment.createdAt))
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, -8)
+                    }
+                    Text(comment.content)
+                        .font(.body)
                 }
-                Text(comment.content)
-                    .font(.body)
-                // 评论按钮
-//                Button(action: {
-//                    showCreateCommentView = true
-//                }) {
-//                    SwiftUI.Image(systemName: "bubble.right")
-//                        .font(.system(size: 15))
-//                }
+                .padding(.leading, 8)
+                
+                Spacer()
             }
-            .padding(.leading, 8)
             
-            Spacer()
+            // 回复按钮
+            Button(action: {
+                let impact = UIImpactFeedbackGenerator(style: .light)
+                impact.impactOccurred()
+                showReplyView = true
+            }) {
+                HStack {
+                    SwiftUI.Image(systemName: "arrowshape.turn.up.left")
+                        .font(.system(size: 12))
+                    Text("回复")
+                        .font(.footnote)
+                }
+                .foregroundColor(.gray)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 10)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(15)
+            }
+            .padding(.leading, 60)
         }
-        .padding(.vertical, 10)
-    }
-    
-    let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0) // 假设日期是 UTC 时间
-        return formatter
-    }()
-    
-    func formatDate(from dateString: String) -> String {
-        guard let date = dateFormatter.date(from: dateString) else {
-            return "未知时间"
+        .padding(.top, 10)
+        .gesture(
+            LongPressGesture(minimumDuration: 0.5)
+                .onEnded { _ in
+                    isLongPressed = true
+                    UIPasteboard.general.string = comment.content
+                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                    impact.impactOccurred()
+                }
+        )
+        .alert(isPresented: $isLongPressed) {
+            Alert(title: Text("评论已复制"), dismissButton: .default(Text("确定")))
         }
-        
-        let now = Date()
-        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date, to: now)
-        
-        if let year = components.year, year > 0 {
-            return "\(year)年前"
-        } else if let month = components.month, month > 0 {
-            return "\(month)个月前"
-        } else if let day = components.day, day > 0 {
-            return "\(day)天前"
-        } else if let hour = components.hour, hour > 0 {
-            return "\(hour)小时前"
-        } else if let minute = components.minute, minute > 0 {
-            return "\(minute)分钟前"
-        } else {
-            return "刚刚"
+        .sheet(isPresented: $showReplyView) {
+            CreateCommentView(parentComment: comment, showCreateCommentView: $showReplyView, onCommentCreated: {
+                refreshManager.refresh()
+            })
         }
     }
 }
