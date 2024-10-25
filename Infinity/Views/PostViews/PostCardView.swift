@@ -57,7 +57,7 @@ struct PostCardView: View {
                             .frame(width: 2)
                             .cornerRadius(1)
                             .padding(.leading, 24)
-                            .frame(height: geometry.size.height + 241)
+                            .frame(height: !postdto.images.isEmpty ? geometry.size.height + 241 : geometry.size.height - 15)
                             .offset(y: 60)
                     }
                 }
@@ -83,29 +83,31 @@ struct PostCardView: View {
                         .padding(.horizontal, 20)
                     }
                     .padding(.horizontal, -20)
-
-                    // 评论按钮
-                    Button(action: {
-                        let impact = UIImpactFeedbackGenerator(style: .light)
-                        impact.impactOccurred()
-                        showCreateCommentView = true
-                    }) {
-                        HStack {
-                            SwiftUI.Image(systemName: "bubble.right")
-                                .font(.system(size: 12))
-                            Text("评论")
-                                .font(.footnote)
-                        }
-                        .foregroundColor(.gray)
-                        .padding(.vertical, 5)
-                        .padding(.horizontal, 10)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(15)
-                    }
-                    .padding(.leading, 60)
                 }
                 .padding(.vertical, 5)
             }
+
+            // 评论按钮
+            Button(action: {
+                let impact = UIImpactFeedbackGenerator(style: .light)
+                impact.impactOccurred()
+                showCreateCommentView = true
+            }) {
+                HStack {
+                    SwiftUI.Image(systemName: "bubble.right")
+                        .font(.system(size: 12))
+                    Text("评论")
+                        .font(.footnote)
+                }
+                .foregroundColor(.gray)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 10)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(15)
+            }
+            .padding(.leading, 60)
+            .padding(.vertical, 5)
+            .padding(.top, postdto.images.isEmpty ? 5 : 0)
             
             // 评论区
             if !postdto.comments.isEmpty {

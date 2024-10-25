@@ -6,7 +6,7 @@ struct EntitiesView: View {
     @ObservedObject var viewModel: EntitiesViewModel
     var onEntitySelected: (EntityDTO?) -> Void
     @State private var selectedEntityId: Int?
-
+    let selectedEntity: EntityDTO?
     var body: some View {
         VStack {
             if let errorMessage = viewModel.errorMessage {
@@ -43,6 +43,11 @@ struct EntitiesView: View {
                     .padding(.horizontal, 16)
                 }
                 .padding(.horizontal, -16)
+            }
+        }
+        .onAppear {
+            if let selectedEntity = selectedEntity {
+                selectedEntityId = selectedEntity.entityID
             }
         }
     }
