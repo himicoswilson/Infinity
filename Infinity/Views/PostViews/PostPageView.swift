@@ -13,6 +13,7 @@ struct PostPageView: View {
     @State private var scrollDirection: ScrollDirection = .none
     @State private var accumulatedScrollDistance: CGFloat = 0
     @State private var scrollThreshold: CGFloat = 50
+    @State private var postListViewHeight: CGFloat = 0
     
     init(entitiesViewModel: EntitiesViewModel, postViewModel: PostViewModel) {
         self.entitiesViewModel = entitiesViewModel
@@ -34,7 +35,7 @@ struct PostPageView: View {
                         .padding(.horizontal)
                         .padding(.vertical, 5)
                         
-                        EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected)
+                        EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected, selectedEntity: selectedEntity)
                             .padding(.horizontal)
                             .padding(.vertical, 5)
                         
@@ -54,6 +55,14 @@ struct PostPageView: View {
                         postViewModel: postViewModel,
                         selectedEntity: $selectedEntity,
                         onLastPostAppear: fetchMorePosts
+                    )
+                    .background(
+                        GeometryReader { geometry -> Color in
+                            DispatchQueue.main.async {
+                                self.postListViewHeight = geometry.size.height
+                            }
+                            return Color.clear
+                        }
                     )
                 }
                 .coordinateSpace(name: "scroll")
@@ -79,8 +88,11 @@ struct PostPageView: View {
                             accumulatedScrollDistance = scrollDelta // 重置累积距离
                         }
                         
-                        // 只有当累积滚动距离超过阈值时才触发头部的显示/隐藏
-                        if abs(accumulatedScrollDistance) > scrollThreshold {
+                        // 使用 PostListView 的实际高度来计算是否接近底部
+                        let isNearBottom = -value > (postListViewHeight - UIScreen.main.bounds.height)
+                        
+                        // 只有当累积滚动距离超过阈值且不在底部附近时才触发头部的显示/隐藏
+                        if abs(accumulatedScrollDistance) > scrollThreshold && !isNearBottom {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 // 如果在顶部或接近顶部，始终显示头部
                                 if value > -10 {
@@ -98,6 +110,9 @@ struct PostPageView: View {
                 }
                 .refreshable {
                     await refreshData()
+                }
+                .safeAreaInset(edge: .bottom) {
+                    Color.clear.frame(height: 80) // CustomTabView 的高度
                 }
             }
             .safeAreaInset(edge: .top) {

@@ -126,10 +126,11 @@ struct PostContentView: View {
                     .frame(width: 2)
                     .cornerRadius(1)
                     .padding(.leading, 24)
-                    .frame(height: geometry.size.height + 205)
+                    .frame(height: !postdto.images.isEmpty ? geometry.size.height + 205 : geometry.size.height - 40)
                     .offset(y: 60)
             }
         }
+        .padding(.bottom, postdto.images.isEmpty ? 15 : 0)
         // 图片
         if !postdto.images.isEmpty {                 
             VStack(alignment: .leading, spacing: 10) {

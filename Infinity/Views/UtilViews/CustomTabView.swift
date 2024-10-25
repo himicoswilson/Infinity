@@ -17,7 +17,7 @@ struct CustomTabView<Content: View>: View {
             content
             
             BlurView(style: .systemMaterial)
-                .frame(height: 100)
+                .frame(height: 80)
                 .overlay(
                     HStack(spacing: 0) {
                         ForEach(0..<3) { index in
@@ -26,7 +26,7 @@ struct CustomTabView<Content: View>: View {
                             }) {
                                 VStack {
                                     SwiftUI.Image(systemName: tabIcon(for: index))
-                                        .font(.system(size: 26))
+                                        .font(.system(size: 24))
                                         .foregroundColor(selectedTab == index ? .primary : .secondary)
                                 }
                                 .offset(y: -10)
