@@ -8,85 +8,102 @@ struct CoupleProfileView: View {
     @State private var selectedBackgroundImage: UIImage?
     @State private var selectedBackgroundItem: PhotosPickerItem?
     @State private var showConfirmationDialog = false
+    @State private var imageHeight: CGFloat = 0
+    let headerHeight: CGFloat = 300
 
     init(coupleViewModel: CoupleViewModel) {
         _coupleViewModel = StateObject(wrappedValue: coupleViewModel)
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                if let couple = coupleViewModel.couple, let _ = coupleViewModel.user1, let _ = coupleViewModel.user2 {
-                    // 背景图片
-                    PhotosPicker(selection: $selectedBackgroundItem, matching: .images) {
-                        if let bgImageURL = couple.bgImg {
-                            BackgroundImageView(imageURL: bgImageURL)
-                        } else {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(height: 300)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .onChange(of: selectedBackgroundItem) { _ in
-                        Task {
-                            if let data = try? await selectedBackgroundItem?.loadTransferable(type: Data.self) {
-                                if let uiImage = UIImage(data: data) {
-                                    selectedBackgroundImage = uiImage
-                                    showConfirmationDialog = true
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    GeometryReader { imageGeometry in
+                        // 背景图片
+                        if let couple = coupleViewModel.couple {
+                            PhotosPicker(selection: $selectedBackgroundItem, matching: .images) {
+                                if let bgImageURL = couple.bgImg {
+                                    KFImage(URL(string: bgImageURL))
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: geometry.size.width, height: max(0, headerHeight + imageGeometry.frame(in: .global).minY))
+                                        .clipped()
+                                        .offset(y: -imageGeometry.frame(in: .global).minY)
+                                } else {
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(height: 300)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .onChange(of: selectedBackgroundItem) { _ in
+                                Task {
+                                    if let data = try? await selectedBackgroundItem?.loadTransferable(type: Data.self) {
+                                        if let uiImage = UIImage(data: data) {
+                                            selectedBackgroundImage = uiImage
+                                            showConfirmationDialog = true
+                                        }
+                                    }
+                                }
+                            }
+                            .confirmationDialog("上传背景图片?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
+                                Button("确认上传") {
+                                    uploadBackgroundImage()
+                                }
+                                Button("取消", role: .cancel) {
+                                    selectedBackgroundImage = nil
                                 }
                             }
                         }
                     }
-                    .confirmationDialog("上传背景图片?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
-                        Button("确认上传") {
-                            uploadBackgroundImage()
-                        }
-                        Button("取消", role: .cancel) {
-                            selectedBackgroundImage = nil
+                    .frame(height: headerHeight)
+                    
+                    LazyVStack(spacing: 8) {
+                        if let couple = coupleViewModel.couple, let _ = coupleViewModel.user1, let _ = coupleViewModel.user2 {
+                            VStack(spacing: 0) {
+                                HStack(spacing: 20) {
+                                    UserInfoView(user: coupleViewModel.currentUser, uploadAvatar: { image in
+                                        coupleViewModel.uploadAvatar(image: image, for: coupleViewModel.currentUser)
+                                    })
+                                    
+                                    SwiftUI.Image(systemName: "heart.fill")
+                                        .foregroundColor(SwiftUI.Color.red)
+                                        .font(SwiftUI.Font.system(size: 40))
+                                    
+                                    UserInfoView(user: coupleViewModel.lover, uploadAvatar: { image in
+                                        coupleViewModel.uploadAvatar(image: image, for: coupleViewModel.lover)
+                                    })
+                                }
+                                .padding()
+                                .offset(y: -30)
+                                
+                                SwiftUI.Text("我们已经在一起 \(timeTogether(since: couple.anniversaryDate))啦")
+                                    .font(.headline)
+                                    .padding(.top, -30)
+
+                                Divider()
+                                    .padding(.top, 20)
+
+                                SwiftUI.Text("小白爱小高！！")
+                                    .font(.system(size: 40, weight: .bold))
+                                    .padding(.top, 50)
+                                
+                                Spacer()
+                            }
+                        } else if let errorMessage = coupleViewModel.errorMessage {
+                            SwiftUI.Text(errorMessage)
+                                .foregroundColor(SwiftUI.Color.red)
+                                .padding(.top, 100)
+                        } else {
+                            SwiftUI.Text("加载中...")
+                                .padding(.top, 100)
                         }
                     }
-                    
-                    HStack(spacing: 20) {
-                        UserInfoView(user: coupleViewModel.currentUser, uploadAvatar: { image in
-                            coupleViewModel.uploadAvatar(image: image, for: coupleViewModel.currentUser)
-                        })
-                        
-                        SwiftUI.Image(systemName: "heart.fill")
-                            .foregroundColor(SwiftUI.Color.red)
-                            .font(SwiftUI.Font.system(size: 40))
-                        
-                        UserInfoView(user: coupleViewModel.lover, uploadAvatar: { image in
-                            coupleViewModel.uploadAvatar(image: image, for: coupleViewModel.lover)
-                        })
-                    }
-                    .padding()
-                    .offset(y: -30)
-                    
-                    SwiftUI.Text("我们已经在一起 \(timeTogether(since: couple.anniversaryDate))啦")
-                        .font(.headline)
-                        .padding(.top, -30)
-
-                    // 分割线
-                    Divider()
-                        .padding(.top, 20)
-
-                    SwiftUI.Text("小白爱小高！！")
-                        .font(.system(size: 40, weight: .bold))
-                        .padding(.top, 50)
-                    
-                    Spacer() // 将内容推到顶部
-                } else if let errorMessage = coupleViewModel.errorMessage {
-                    SwiftUI.Text(errorMessage)
-                        .foregroundColor(SwiftUI.Color.red)
-                        .padding(.top, 100)
-                } else {
-                    SwiftUI.Text("加载中...")
-                        .padding(.top, 100)
                 }
             }
+            .edgesIgnoringSafeArea(.top)
         }
-        .edgesIgnoringSafeArea(.top)
         .onAppear {
             if coupleViewModel.couple == nil {
                 coupleViewModel.fetchCoupleInfo()
@@ -168,18 +185,6 @@ struct UserInfoView: View {
     }
 }
 
-struct BackgroundImageView: View {
-    let imageURL: String
-    
-    var body: some View {
-        KFImage(URL(string: imageURL))
-            .resizable()
-            .aspectRatio(contentMode: .fill)
-            .frame(height: 300)
-            .clipped()
-    }
-}
-
 struct AvatarImageView: View {
     let imageURL: String
     
@@ -191,5 +196,13 @@ struct AvatarImageView: View {
             .clipShape(Circle())
             .overlay(Circle().stroke(Color.white, lineWidth: 3))
             .shadow(radius: 3)
+    }
+}
+
+struct ViewOffsetKey: PreferenceKey {
+    typealias Value = CGFloat
+    static var defaultValue = CGFloat.zero
+    static func reduce(value: inout Value, nextValue: () -> Value) {
+        value += nextValue()
     }
 }
