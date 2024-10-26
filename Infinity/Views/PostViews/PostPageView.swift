@@ -4,7 +4,6 @@ struct PostPageView: View {
     @ObservedObject private var postViewModel: PostViewModel
     @ObservedObject private var entitiesViewModel: EntitiesViewModel
     @State private var refreshTask: Task<Void, Never>?
-    @State private var selectedEntity: EntityDTO?
     @State private var scrollOffset: CGFloat = 0
     @State private var showHeader: Bool = true
     @State private var topSafeAreaHeight: CGFloat = 0
@@ -35,7 +34,7 @@ struct PostPageView: View {
                         .padding(.horizontal)
                         .padding(.vertical, 5)
                         
-                        EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected, selectedEntity: selectedEntity)
+                        EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected, selectedEntity: postViewModel.selectedEntity)
                             .padding(.horizontal)
                             .padding(.vertical, 5)
                         
@@ -53,7 +52,6 @@ struct PostPageView: View {
 
                     PostListView(
                         postViewModel: postViewModel,
-                        selectedEntity: $selectedEntity,
                         onLastPostAppear: fetchMorePosts
                     )
                     .background(
@@ -126,12 +124,13 @@ struct PostPageView: View {
             .padding(.bottom, 10)
             .onAppear {
                 topSafeAreaHeight = geometry.safeAreaInsets.top
-                Task{
+                Task {
+                    if entitiesViewModel.entities.isEmpty {
+                        await entitiesViewModel.fetchEntities()
+                    }
+                    await postViewModel.loadInitialEntityPosts(entities: entitiesViewModel.entities)
                     if postViewModel.posts.isEmpty {
                         postViewModel.fetchPosts(refresh: true)
-                    }
-                    if entitiesViewModel.entities.isEmpty{
-                        await entitiesViewModel.fetchEntities()
                     }
                 }
             }
@@ -145,7 +144,7 @@ struct PostPageView: View {
     func refreshData() async {
         refreshTask?.cancel()
         refreshTask = Task {
-            if let entity = selectedEntity {
+            if let entity = postViewModel.selectedEntity {
                 postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
             } else {
                 postViewModel.fetchPosts(refresh: true)
@@ -156,28 +155,28 @@ struct PostPageView: View {
 
     func onEntitySelected(_ entity: EntityDTO?) {
         if let entity = entity {
-            if selectedEntity?.entityID == entity.entityID {
-                // 如果再次点击相同的实体，切换回显示所有帖子
-                selectedEntity = nil
-                postViewModel.isShowingEntityPosts = false
+            if postViewModel.selectedEntity?.entityID == entity.entityID {
+                postViewModel.setCurrentEntity(nil)
             } else {
-                // 选择新的实体
-                selectedEntity = entity
-                postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
-                postViewModel.isShowingEntityPosts = true
+                postViewModel.setCurrentEntity(entity)
+                if postViewModel.postsByEntityID[entity.entityID] == nil {
+                    Task {
+                        postViewModel.fetchPostsByEntity(entityId: entity.entityID, refresh: true)
+                    }
+                }
             }
         } else {
-            // 取消选择实体
-            selectedEntity = nil
-            postViewModel.isShowingEntityPosts = false
+            postViewModel.setCurrentEntity(nil)
         }
     }
 
     private func fetchMorePosts() {
-        guard !postViewModel.isLoading && postViewModel.hasMorePosts else { return }
+        guard !postViewModel.isLoading else { return }
 
         if postViewModel.isShowingEntityPosts {
-            postViewModel.fetchPostsByEntity(entityId: selectedEntity!.entityID)
+            if let entityID = postViewModel.currentEntityID {
+                postViewModel.fetchPostsByEntity(entityId: entityID)
+            }
         } else {
             postViewModel.fetchPosts()
         }
@@ -186,18 +185,18 @@ struct PostPageView: View {
 
 struct PostListView: View {
     @ObservedObject var postViewModel: PostViewModel
-    @Binding var selectedEntity: EntityDTO?
     var onLastPostAppear: () -> Void
     
     var body: some View {
         LazyVStack(spacing: 0) {
-            ForEach(postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity : postViewModel.posts) { post in
+            let posts = postViewModel.getPostsForCurrentEntity()
+            ForEach(posts) { post in
                 VStack(spacing: 0) {
                     PostCardView(postdto: post)
                         .padding(.vertical, 16)
                         .padding(.horizontal)
                     
-                    if post.id != (postViewModel.isShowingEntityPosts ? postViewModel.postsByEntity.last?.id : postViewModel.posts.last?.id) {
+                    if post.id != posts.last?.id {
                         Divider()
                             .frame(maxWidth: .infinity)
                     }
@@ -205,7 +204,7 @@ struct PostListView: View {
                 .padding(.vertical, -2)
             }
             
-            if postViewModel.hasMorePosts {
+            if postViewModel.hasMorePostsForCurrentView {
                 ProgressView()
                     .frame(maxWidth: .infinity)
                     .padding()
