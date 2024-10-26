@@ -4,32 +4,37 @@ import SwiftUI
 @MainActor
 class PostViewModel: ObservableObject {
     @Published var posts: [PostDTO] = []
-    @Published var postsByEntity: [PostDTO] = []
+    @Published var postsByEntityID: [Int: [PostDTO]] = [:]
     @Published var isShowingEntityPosts: Bool = false
     @Published var errorMessage: String?
     @Published var isLoading = false
-    @Published var hasMorePosts = true
-    
-    private var currentPage = 1
-    private let postsPerPage = 10
+    @Published var currentEntityID: Int?
+    @Published var selectedEntity: EntityDTO?
+    @Published var hasMorePostsByEntityID: [Int: Bool] = [:]
+    private var currentPageByEntityID: [Int: Int] = [:]
+    private var hasMorePostsForMainPage: Bool = true
+    private var currentPageForMainPage: Int = 1
+    private var postsPerPage: Int = 10
+
     private var fetchTask: Task<Void, Never>?
+    private var loadInitialTask: Task<Void, Never>?
 
     func fetchPosts(refresh: Bool = false) {
         fetchTask?.cancel()
         fetchTask = Task {
             if refresh {
-                currentPage = 1
-                hasMorePosts = true
+                currentPageForMainPage = 1
+                hasMorePostsForMainPage = true
                 posts = []
             } else if self.isLoading {
                 return
             }
             
-            guard self.hasMorePosts else { return }
+            guard hasMorePostsForMainPage else { return }
 
             self.isLoading = true
             do {
-                let endpoint = "\(Constants.APIEndpoints.posts)?page=\(currentPage)&limit=\(postsPerPage)"
+                let endpoint = "\(Constants.APIEndpoints.posts)?page=\(currentPageForMainPage)&limit=\(postsPerPage)"
                 let fetchedPosts: [PostDTO] = try await APIService.shared.get(endpoint)
                 if Task.isCancelled { return }
                 
@@ -45,8 +50,8 @@ class PostViewModel: ObservableObject {
                     self.posts.append(contentsOf: updatedPosts)
                 }
                 
-                self.hasMorePosts = fetchedPosts.count == postsPerPage
-                self.currentPage += 1
+                hasMorePostsForMainPage = fetchedPosts.count == postsPerPage
+                currentPageForMainPage += 1
                 self.errorMessage = nil
             } catch {
                 if !Task.isCancelled {
@@ -61,21 +66,21 @@ class PostViewModel: ObservableObject {
     }
 
     func fetchPostsByEntity(entityId: Int, refresh: Bool = false) {
-        fetchTask?.cancel()
-        fetchTask = Task {
+        Task {
             if refresh {
-                currentPage = 1
-                hasMorePosts = true
-                postsByEntity = []
+                currentPageByEntityID[entityId] = 1
+                hasMorePostsByEntityID[entityId] = true
+                postsByEntityID[entityId] = []
             } else if self.isLoading {
                 return
             }
             
-            guard self.hasMorePosts else { return }
+            guard hasMorePostsByEntityID[entityId] ?? true else { return }
 
             self.isLoading = true
 
             do {
+                let currentPage = currentPageByEntityID[entityId] ?? 1
                 let endpoint = Constants.APIEndpoints.postByEntityId(entityId, currentPage, postsPerPage)
                 let fetchedPosts: [PostDTO] = try await APIService.shared.get(endpoint)
                 if Task.isCancelled { return }
@@ -85,15 +90,15 @@ class PostViewModel: ObservableObject {
                     updatedPost.updateRelativeTime()
                     return updatedPost
                 }
-                
+
                 if refresh {
-                    self.postsByEntity = updatedPosts
+                    self.postsByEntityID[entityId] = updatedPosts
                 } else {
-                    self.postsByEntity.append(contentsOf: updatedPosts)
+                    self.postsByEntityID[entityId, default: []].append(contentsOf: updatedPosts)
                 }
                 
-                self.hasMorePosts = fetchedPosts.count == postsPerPage
-                self.currentPage += 1
+                hasMorePostsByEntityID[entityId] = fetchedPosts.count == postsPerPage
+                currentPageByEntityID[entityId] = (currentPageByEntityID[entityId] ?? 1) + 1
                 self.errorMessage = nil
             } catch {
                 if !Task.isCancelled {
@@ -104,6 +109,40 @@ class PostViewModel: ObservableObject {
             if !Task.isCancelled {
                 self.isLoading = false
             }
+        }
+    }
+
+    func loadInitialEntityPosts(entities: [EntityDTO]) async {
+        loadInitialTask?.cancel()
+        loadInitialTask = Task {
+            for entity in entities {
+                if postsByEntityID[entity.entityID] == nil {
+                    fetchPostsByEntity(entityId: entity.entityID, refresh: true)
+                }
+                if Task.isCancelled { break }
+            }
+        }
+        await loadInitialTask?.value
+    }
+
+    func getPostsForCurrentEntity() -> [PostDTO] {
+        guard let currentEntityID = currentEntityID else {
+            return posts
+        }
+        return postsByEntityID[currentEntityID] ?? []
+    }
+
+    func setCurrentEntity(_ entity: EntityDTO?) {
+        selectedEntity = entity
+        currentEntityID = entity?.entityID
+        isShowingEntityPosts = entity != nil
+    }
+
+    var hasMorePostsForCurrentView: Bool {
+        if isShowingEntityPosts {
+            return hasMorePostsByEntityID[currentEntityID ?? -1] ?? false
+        } else {
+            return hasMorePostsForMainPage
         }
     }
 }
