@@ -251,18 +251,6 @@ struct CommentItemView: View {
             .padding(.leading, 60)
         }
         .padding(.top, 10)
-        .gesture(
-            LongPressGesture(minimumDuration: 0.5)
-                .onEnded { _ in
-                    isLongPressed = true
-                    UIPasteboard.general.string = comment.content
-                    let impact = UIImpactFeedbackGenerator(style: .medium)
-                    impact.impactOccurred()
-                }
-        )
-        .alert(isPresented: $isLongPressed) {
-            Alert(title: Text("评论已复制"), dismissButton: .default(Text("确定")))
-        }
         .sheet(isPresented: $showReplyView) {
             CreateCommentView(parentComment: comment, showCreateCommentView: $showReplyView, onCommentCreated: {
                 refreshManager.refresh()
