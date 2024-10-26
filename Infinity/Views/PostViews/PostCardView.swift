@@ -3,10 +3,15 @@ import Kingfisher
 
 struct PostCardView: View {
     let postdto: PostDTO
+    @StateObject private var commentsManager: CommentsManager
     @State private var showImagePreview = false
     @State private var previewCurrentPage = 0
     @State private var showCreateCommentView = false
-    @EnvironmentObject var refreshManager: RefreshManager
+    
+    init(postdto: PostDTO) {
+        self.postdto = postdto
+        _commentsManager = StateObject(wrappedValue: CommentsManager())
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -50,8 +55,8 @@ struct PostCardView: View {
                 .padding(.top, 5)
 
                 // 左侧的矩形直线
-                GeometryReader { geometry in
-                    if !postdto.comments.isEmpty {
+                if !commentsManager.comments.isEmpty {
+                    GeometryReader { geometry in
                         Rectangle()
                             .fill(Color.gray.opacity(0.5))
                             .frame(width: 2)
@@ -110,8 +115,8 @@ struct PostCardView: View {
             .padding(.top, postdto.images.isEmpty ? 5 : 0)
             
             // 评论区
-            if !postdto.comments.isEmpty {
-                PostCommentView(postdto: postdto, comments: postdto.comments)
+            if !commentsManager.comments.isEmpty {
+                PostCommentView(postdto: postdto, comments: commentsManager.comments)
             }
         }
         .fullScreenCover(isPresented: $showImagePreview) {
@@ -119,9 +124,11 @@ struct PostCardView: View {
                 .edgesIgnoringSafeArea(.all)
         }
         .sheet(isPresented: $showCreateCommentView) {
-            CreateCommentView(postdto: postdto, showCreateCommentView: $showCreateCommentView, onCommentCreated: {
-                refreshManager.refresh()
-            })
+            CreateCommentView(postdto: postdto, showCreateCommentView: $showCreateCommentView, onCommentCreated: commentsManager.addComment)
+        }
+        .environmentObject(commentsManager)
+        .onAppear {
+            commentsManager.comments = postdto.comments
         }
     }
 }
@@ -154,13 +161,13 @@ struct LocationAndTagsView: View {
 
 struct PostCommentView: View {
     let postdto: PostDTO
-    var comments: [CommentDTO]
-
+    let comments: [CommentDTO]
+    @EnvironmentObject var commentsManager: CommentsManager
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let latestComment = findLatestTopLevelComment() {
                 VStack(spacing: 0) {
-                    CommentItemView(postdto: postdto, comment: latestComment, allComments: comments)
+                    CommentItemView(postdto: postdto, comment: latestComment)
                     
                     let replies = comments.filter { $0.parentCommentID == latestComment.commentID }
                     if let oldestReply = replies.last {
@@ -177,16 +184,17 @@ struct PostCommentView: View {
                             }
                         }
                         
-                        CommentItemView(postdto: postdto, comment: oldestReply, allComments: comments)
+                        CommentItemView(postdto: postdto, comment: oldestReply)
                     }
                 }
             }
         }
     }
+
     private func findLatestTopLevelComment() -> CommentDTO? {
-        for i in (0..<comments.count).reversed() {
-            if comments[i].parentCommentID == nil {
-                return comments[i]
+        for comment in comments.reversed() {
+            if comment.parentCommentID == nil {
+                return comment
             }
         }
         return nil
@@ -196,10 +204,8 @@ struct PostCommentView: View {
 struct CommentItemView: View {
     let postdto: PostDTO
     let comment: CommentDTO
-    let allComments: [CommentDTO]
-    @State private var isLongPressed = false
     @State private var showReplyView = false
-    @EnvironmentObject var refreshManager: RefreshManager
+    @EnvironmentObject var commentsManager: CommentsManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -252,9 +258,7 @@ struct CommentItemView: View {
         }
         .padding(.top, 10)
         .sheet(isPresented: $showReplyView) {
-            CreateCommentView(parentComment: comment, showCreateCommentView: $showReplyView, onCommentCreated: {
-                refreshManager.refresh()
-            })
+            CreateCommentView(parentComment: comment, showCreateCommentView: $showReplyView, onCommentCreated: commentsManager.addComment)
         }
     }
 }
