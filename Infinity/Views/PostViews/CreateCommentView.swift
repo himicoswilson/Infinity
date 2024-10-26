@@ -6,8 +6,9 @@ struct CreateCommentView: View {
     @EnvironmentObject var coupleViewModel: CoupleViewModel
     @FocusState private var focusedField: Bool
     @Binding var showCreateCommentView: Bool
-    
-    init(postdto: PostDTO? = nil, parentComment: CommentDTO? = nil, showCreateCommentView: Binding<Bool>, onCommentCreated: @escaping () -> Void) {
+    @EnvironmentObject var commentsManager: CommentsManager
+
+    init(postdto: PostDTO? = nil, parentComment: CommentDTO? = nil, showCreateCommentView: Binding<Bool>, onCommentCreated: @escaping (CommentDTO) -> Void) {
         _viewModel = StateObject(wrappedValue: CreateCommentViewModel(postdto: postdto, parentComment: parentComment, onCommentCreated: onCommentCreated))
         _showCreateCommentView = showCreateCommentView
     }

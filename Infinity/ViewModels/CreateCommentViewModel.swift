@@ -9,9 +9,9 @@ class CreateCommentViewModel: ObservableObject {
     
     let postdto: PostDTO?
     let parentComment: CommentDTO?
-    var onCommentCreated: (() -> Void)?
+    var onCommentCreated: ((CommentDTO) -> Void)?
     
-    init(postdto: PostDTO? = nil, parentComment: CommentDTO? = nil, onCommentCreated: @escaping () -> Void) {
+    init(postdto: PostDTO? = nil, parentComment: CommentDTO? = nil, onCommentCreated: @escaping (CommentDTO) -> Void) {
         self.postdto = postdto
         self.parentComment = parentComment
         self.onCommentCreated = onCommentCreated
@@ -33,12 +33,12 @@ class CreateCommentViewModel: ObservableObject {
         
         Task {
             do {
-                let _: CommentDTO = try await APIService.shared.post(Constants.APIEndpoints.comments, parameters: parameters)
+                let newComment: CommentDTO = try await APIService.shared.post(Constants.APIEndpoints.comments, parameters: parameters)
                 DispatchQueue.main.async {
                     self.commentText = ""
                     self.isLoading = false
                     self.commentCreated = true
-                    self.onCommentCreated?()
+                    self.onCommentCreated?(newComment)
                 }
             } catch {
                 DispatchQueue.main.async {
