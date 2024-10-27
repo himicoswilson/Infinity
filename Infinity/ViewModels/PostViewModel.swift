@@ -39,8 +39,7 @@ class PostViewModel: ObservableObject {
                 if Task.isCancelled { return }
                 
                 let updatedPosts = fetchedPosts.map { post in
-                    var updatedPost = post
-                    updatedPost.updateRelativeTime()
+                    let updatedPost = post
                     return updatedPost
                 }
                 
@@ -86,8 +85,7 @@ class PostViewModel: ObservableObject {
                 if Task.isCancelled { return }
                 
                 let updatedPosts = fetchedPosts.map { post in
-                    var updatedPost = post
-                    updatedPost.updateRelativeTime()
+                    let updatedPost = post
                     return updatedPost
                 }
 

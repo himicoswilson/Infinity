@@ -113,7 +113,7 @@ struct PostContentView: View {
                 }
                 
                 Spacer()
-                Text(postdto.relativeTime ?? "未知时间")
+                Text(Date.formatRelativeTime(from: postdto.createdAt))
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .padding(.top, 2)
