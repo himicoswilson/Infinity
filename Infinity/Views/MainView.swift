@@ -46,19 +46,15 @@ struct MainView: View {
         CustomTabView(selectedTab: $selectedTab, showCreatePost: {
             showCreatePost = true
         }) {
-            ZStack {
-                switch selectedTab {
-                case 0:
-                    PostPageView(entitiesViewModel: entitiesViewModel, postViewModel: postViewModel)
-                        .environmentObject(coupleViewModel)
-                case 1:
-                    BirthdayCardView()
-                case 2:
-                    CoupleProfileView(coupleViewModel: coupleViewModel)
-                default:
-                    EmptyView()
-                }
-            }
+            PostPageView(entitiesViewModel: entitiesViewModel, postViewModel: postViewModel)
+                .environmentObject(coupleViewModel)
+                .tag(0)
+
+            BirthdayCardView()
+                .tag(1)
+                
+            CoupleProfileView(coupleViewModel: coupleViewModel)
+                .tag(2)
         }
         .opacity(opacity)
         .animation(.easeInOut(duration: 0.5), value: opacity)

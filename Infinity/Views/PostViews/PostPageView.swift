@@ -121,7 +121,6 @@ struct PostPageView: View {
                         .offset(y: -topSafeAreaHeight)
                 }
             }
-            .padding(.bottom, 10)
             .onAppear {
                 topSafeAreaHeight = geometry.safeAreaInsets.top
                 Task {
