@@ -36,9 +36,9 @@ struct CreatePostView: View {
                     }
                 Spacer()
                 Text("发布")
-                    .foregroundColor(viewModel.isLoading ? .gray : .primary)
+                    .foregroundColor(viewModel.canPost && !viewModel.isLoading ? .primary : .gray)
                     .onTapGesture {
-                        if !viewModel.isLoading {
+                        if viewModel.canPost && !viewModel.isLoading {
                             viewModel.createPost()
                         }
                     }
@@ -163,8 +163,8 @@ struct CreatePostView: View {
                             .font(.headline)
                         Text(viewModel.errorMessage ?? "未知错误")
                             .font(.subheadline)
-                        Button("重新发送") {
-                            viewModel.createPost()
+                        Button("确定") {
+                            viewModel.showError = false
                         }
                         .padding()
                         .background(Color.blue)
