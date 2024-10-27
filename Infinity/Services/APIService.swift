@@ -72,16 +72,15 @@ class APIService {
                 
                 // 添加文件
                 if fileFieldName == "images" {
-                    for (index, (_, data)) in files.enumerated() {
-                        multipartFormData.append(data, withName: "images", fileName: "image\(index).jpg", mimeType: "image/jpeg")
-                        print("添加文件: images, 文件名: image\(index).jpg, 大小: \(data.count) bytes")
+                    let sortedFiles = files.sorted { $0.key < $1.key }
+                    for (key, data) in sortedFiles {
+                        multipartFormData.append(data, withName: "images", fileName: "\(key).jpg", mimeType: "image/jpeg")
                     }
                 } else {
                     for (key, data) in files {
                         let fileName = fileNames?[key] ?? "\(key).jpg"
                         let mimeType = mimeTypes?[key] ?? "image/jpeg"
                         multipartFormData.append(data, withName: fileFieldName, fileName: fileName, mimeType: mimeType)
-                        print("添加文件: \(fileFieldName), 文件名: \(fileName), 大小: \(data.count) bytes")
                     }
                 }
             }, to: url, method: method, headers: headers)

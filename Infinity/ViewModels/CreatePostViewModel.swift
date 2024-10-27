@@ -69,6 +69,10 @@ class CreatePostViewModel: ObservableObject {
         )
     }
     
+    var canPost: Bool {
+        !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !selectedImages.isEmpty
+    }
+    
     func createPost() {
         Task {
             isLoading = true
