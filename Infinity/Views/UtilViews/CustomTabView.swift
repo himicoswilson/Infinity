@@ -14,49 +14,45 @@ struct CustomTabView<Content: View>: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            content
+            TabView(selection: $selectedTab) {
+                content
+            }
+            .accentColor(colorScheme == .dark ? .white : .black)
             
-            BlurView(style: .systemMaterial)
-                .frame(height: 80)
-                .overlay(
-                    HStack(spacing: 0) {
-                        ForEach(0..<3) { index in
-                            Button(action: {
-                                selectedTab = index
-                            }) {
-                                VStack {
-                                    SwiftUI.Image(systemName: tabIcon(for: index))
-                                        .font(.system(size: 24))
-                                        .foregroundColor(selectedTab == index ? .primary : .secondary)
-                                }
-                                .offset(y: -10)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            }
-                        }
-                    }
-                    .overlay(
-                        Button(action: showCreatePost) {
-                            SwiftUI.Image(systemName: "plus")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(colorScheme == .dark ? .black : .white)
-                                .frame(width: 56, height: 40)
-                                .background(colorScheme == .dark ? Color.white : Color.black)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                        }
-                        .offset(y: -10)
-                    )
-                )
-                .background(colorScheme == .dark ? Color.black.opacity(0.1) : Color.white.opacity(0.1))
+            customTabBar
         }
         .edgesIgnoringSafeArea(.bottom)
     }
     
-    func tabIcon(for index: Int) -> String {
-        switch index {
-        case 0: return "seal.fill"
-        case 1: return ""
-        case 2: return "heart.fill"
-        default: return ""
+    private var customTabBar: some View {
+        HStack(spacing: 0) {
+            tabButton(imageName: "seal.fill", tab: 0)
+            Spacer()
+            createPostButton
+            Spacer()
+            tabButton(imageName: "heart.fill", tab: 2)
+        }
+        .padding(.horizontal, 40)
+        .padding(.vertical, 5)
+        .padding(.bottom, 30)
+    }
+    
+    private func tabButton(imageName: String, tab: Int) -> some View {
+        Button(action: { selectedTab = tab }) {
+            SwiftUI.Image(systemName: imageName)
+                .font(.system(size: 22))
+                .foregroundColor(selectedTab == tab ? (colorScheme == .dark ? .white : .black) : .gray)
+        }
+    }
+    
+    private var createPostButton: some View {
+        Button(action: showCreatePost) {
+            SwiftUI.Image(systemName: "plus")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .frame(width: 56, height: 40)
+                .background(colorScheme == .dark ? Color.white : Color.black)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 }

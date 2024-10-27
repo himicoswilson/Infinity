@@ -171,19 +171,6 @@ struct PostCommentView: View {
                     
                     let replies = comments.filter { $0.parentCommentID == latestComment.commentID }
                     if let oldestReply = replies.last {
-                        // 左侧的矩形直线
-                        GeometryReader { geometry in
-                            HStack(spacing: 0) {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.5))
-                                    .frame(width: 2)
-                                    .cornerRadius(1)
-                                    .padding(.leading, 24)
-                                    .frame(height: geometry.size.height + 32)
-                                    .offset(y: -26)
-                            }
-                        }
-                        
                         CommentItemView(postdto: postdto, comment: oldestReply)
                     }
                 }
@@ -209,31 +196,47 @@ struct CommentItemView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .top, spacing: 0) {
-                // 头像
-                KFImage(URL(string: comment.userAvatar ?? ""))
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 50, height: 50)
-                    .clipShape(Circle())
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(comment.nickName ?? comment.userName)
-                            .font(.headline)
-                            .fontWeight(.bold)
-                        Spacer()
-                        Text(Date.formatRelativeTime(from: comment.createdAt))
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .padding(.horizontal, -8)
+            ZStack(alignment: .topLeading){
+                HStack(alignment: .top, spacing: 0) {
+                    // 头像
+                    KFImage(URL(string: comment.userAvatar ?? ""))
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 50, height: 50)
+                        .clipShape(Circle())
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(comment.nickName ?? comment.userName)
+                                .font(.headline)
+                                .fontWeight(.bold)
+                            Spacer()
+                            Text(Date.formatRelativeTime(from: comment.createdAt))
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, -8)
+                        }
+                        Text(comment.content)
+                            .font(.body)
                     }
-                    Text(comment.content)
-                        .font(.body)
+                    .padding(.leading, 8)
+                    
+                    Spacer()
                 }
-                .padding(.leading, 8)
-                
-                Spacer()
+
+                if comment.parentCommentID == nil && hasReplies {
+                    GeometryReader { geometry in
+                        HStack(spacing: 0) {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.5))
+                                .frame(width: 2)
+                                .cornerRadius(1)
+                                .padding(.leading, 24)
+                                .frame(height: geometry.size.height - 19)
+                                .offset(y: 55)
+                        }
+                    }
+                }
             }
             
             // 回复按钮
@@ -260,5 +263,9 @@ struct CommentItemView: View {
         .sheet(isPresented: $showReplyView) {
             CreateCommentView(parentComment: comment, showCreateCommentView: $showReplyView, onCommentCreated: commentsManager.addComment)
         }
+    }
+
+    private var hasReplies: Bool {
+        commentsManager.comments.contains { $0.parentCommentID == comment.commentID }
     }
 }
