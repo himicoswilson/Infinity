@@ -35,6 +35,24 @@ class CreateCommentViewModel: ObservableObject {
             do {
                 let newComment: CommentDTO = try await APIService.shared.post(Constants.APIEndpoints.comments, parameters: parameters)
                 DispatchQueue.main.async {
+                    // 检查是否是给自己的帖子评论
+                    let currentUsername = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.username)
+                    let postAuthor = self.postdto?.userName ?? self.parentComment?.userName
+                    
+                    // 只有在评论者和帖子作者不同时才发送通知
+                    if currentUsername != postAuthor {
+                        let notificationBody = self.commentText.isEmpty ? "[评论]" : self.commentText
+                        let nickName = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.nickName) ?? "有人"
+                        NotificationService.shared.sendBarkNotification(
+                            barkToken: UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.loverBarkToken) ?? "",
+                            title: "\(nickName)回复了你",
+                            body: notificationBody,
+                            group: Constants.BarkAPI.defaultGroup,
+                            icon: Constants.BarkAPI.defaultIcon,
+                            scheme: Constants.BarkAPI.defaultScheme
+                        )
+                    }
+                    
                     self.commentText = ""
                     self.isLoading = false
                     self.commentCreated = true

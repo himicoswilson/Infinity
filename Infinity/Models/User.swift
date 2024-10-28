@@ -7,6 +7,7 @@ struct User: Codable {
     let password: String
     let email: String
     let avatar: String?
+    let barkToken: String?
     let registrationDate: String
     let logoutDate: String?
     let updatedAt: String
@@ -21,6 +22,7 @@ struct User: Codable {
         case password
         case email
         case avatar
+        case barkToken
         case registrationDate
         case logoutDate
         case updatedAt

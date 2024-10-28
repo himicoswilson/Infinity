@@ -27,6 +27,7 @@ class AuthViewModel: ObservableObject {
                     UserDefaults.standard.set(response.token, forKey: Constants.UserDefaultsKeys.token)
                     UserDefaults.standard.set(response.user.userID, forKey: Constants.UserDefaultsKeys.userID)
                     UserDefaults.standard.set(response.user.userName, forKey: Constants.UserDefaultsKeys.username)
+                    UserDefaults.standard.set(response.user.nickName, forKey: Constants.UserDefaultsKeys.nickName)
                 }
             } catch {
                 self.errorMessage = APIService.handleError(error)
@@ -53,6 +54,7 @@ class AuthViewModel: ObservableObject {
                     UserDefaults.standard.set(response.token, forKey: Constants.UserDefaultsKeys.token)
                     UserDefaults.standard.set(response.user.userID, forKey: Constants.UserDefaultsKeys.userID)
                     UserDefaults.standard.set(response.user.userName, forKey: Constants.UserDefaultsKeys.username)
+                    UserDefaults.standard.set(response.user.nickName, forKey: Constants.UserDefaultsKeys.nickName)
                 }
             } catch {
                 self.errorMessage = APIService.handleError(error)
