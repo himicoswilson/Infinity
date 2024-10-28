@@ -18,6 +18,14 @@ class CoupleViewModel: ObservableObject {
                 self.user1 = try await APIService.shared.get(Constants.APIEndpoints.users + "/\(fetchedCouple.userID1)")
                 self.user2 = try await APIService.shared.get(Constants.APIEndpoints.users + "/\(fetchedCouple.userID2)")
                 
+                // 保存 BarkToken
+                if userID == user1?.userID {
+                    UserDefaults.standard.setValue(user1?.barkToken, forKey: Constants.UserDefaultsKeys.currentUserBarkToken)
+                    UserDefaults.standard.setValue(user2?.barkToken, forKey: Constants.UserDefaultsKeys.loverBarkToken)
+                } else {
+                    UserDefaults.standard.setValue(user2?.barkToken, forKey: Constants.UserDefaultsKeys.currentUserBarkToken)
+                    UserDefaults.standard.setValue(user1?.barkToken, forKey: Constants.UserDefaultsKeys.loverBarkToken)
+                }
             } catch {
                 self.errorMessage = APIService.handleError(error)
                 print("获取信息错误: \(self.errorMessage ?? "未知错误")")
