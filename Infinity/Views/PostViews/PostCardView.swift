@@ -67,7 +67,7 @@ struct PostCardView: View {
                     }
                 }
             }
-            // 图片和按钮控件
+            // 图片
             if !postdto.images.isEmpty {                 
                 VStack(alignment: .leading, spacing: 10) {
                     ScrollView(.horizontal, showsIndicators: false) {

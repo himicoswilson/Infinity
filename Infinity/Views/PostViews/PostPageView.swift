@@ -12,56 +12,58 @@ struct PostPageView: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ScrollView {
-                        HStack {
-                            Text("Infinity")
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .padding(.leading, 5) // 额外的左侧间距
-                            Spacer()
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 5)
-                        
-                        EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected, selectedEntity: postViewModel.selectedEntity)
+        NavigationStack {
+            GeometryReader { geometry in
+                ZStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ScrollView {
+                            HStack {
+                                Text("Infinity")
+                                    .font(.title)
+                                    .fontWeight(.bold)
+                                    .padding(.leading, 5) // 额外的左侧间距
+                                Spacer()
+                            }
                             .padding(.horizontal)
                             .padding(.vertical, 5)
-                        
-                        Divider()
-                            .padding(.top, 8)
-                        
-                        PostListView(
-                            postViewModel: postViewModel,
-                            onLastPostAppear: fetchMorePosts
-                        )
+                            
+                            EntitiesView(viewModel: entitiesViewModel, onEntitySelected: onEntitySelected, selectedEntity: postViewModel.selectedEntity)
+                                .padding(.horizontal)
+                                .padding(.vertical, 5)
+                            
+                            Divider()
+                                .padding(.top, 8)
+                            
+                            PostListView(
+                                postViewModel: postViewModel,
+                                onLastPostAppear: fetchMorePosts
+                            )
+                        }
+                        .refreshable {
+                            await refreshData()
+                        }
                     }
-                    .refreshable {
-                        await refreshData()
+                    
+                    BlurView(style: .regular)
+                        .frame(height: topSafeAreaHeight)
+                        .frame(maxWidth: .infinity)
+                        .offset(y: -topSafeAreaHeight)
+                }
+                .onAppear {
+                    topSafeAreaHeight = geometry.safeAreaInsets.top
+                    Task {
+                        if entitiesViewModel.entities.isEmpty {
+                            await entitiesViewModel.fetchEntities()
+                        }
+                        await postViewModel.loadInitialEntityPosts(entities: entitiesViewModel.entities)
+                        if postViewModel.posts.isEmpty {
+                            postViewModel.fetchPosts(refresh: true)
+                        }
                     }
                 }
-                
-                BlurView(style: .regular)
-                    .frame(height: topSafeAreaHeight)
-                    .frame(maxWidth: .infinity)
-                    .offset(y: -topSafeAreaHeight)
-            }
-            .onAppear {
-                topSafeAreaHeight = geometry.safeAreaInsets.top
-                Task {
-                    if entitiesViewModel.entities.isEmpty {
-                        await entitiesViewModel.fetchEntities()
-                    }
-                    await postViewModel.loadInitialEntityPosts(entities: entitiesViewModel.entities)
-                    if postViewModel.posts.isEmpty {
-                        postViewModel.fetchPosts(refresh: true)
-                    }
+                .onDisappear {
+                    refreshTask?.cancel()
                 }
-            }
-            .onDisappear {
-                refreshTask?.cancel()
             }
         }
     }
@@ -106,43 +108,3 @@ struct PostPageView: View {
             postViewModel.fetchPosts()
         }
     }
-}
-
-struct PostListView: View {
-    @ObservedObject var postViewModel: PostViewModel
-    var onLastPostAppear: () -> Void
-    
-    var body: some View {
-        LazyVStack(spacing: 0) {
-            let posts = postViewModel.getPostsForCurrentEntity()
-            ForEach(posts) { post in
-                VStack(spacing: 0) {
-                    PostCardView(postdto: post)
-                        .padding(.vertical, 16)
-                        .padding(.horizontal)
-                    
-                    if post.id != posts.last?.id {
-                        Divider()
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .padding(.vertical, -2)
-            }
-            
-            if postViewModel.hasMorePostsForCurrentView {
-                ProgressView()
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .onAppear {
-                        onLastPostAppear()
-                    }
-            } else if !postViewModel.isLoading {
-                Text("没有啦，快去记录一条吧～")
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-            }
-        }
-    }
-}
