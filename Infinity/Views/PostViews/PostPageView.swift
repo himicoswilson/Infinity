@@ -108,4 +108,3 @@ struct PostPageView: View {
             postViewModel.fetchPosts()
         }
     }
-}
