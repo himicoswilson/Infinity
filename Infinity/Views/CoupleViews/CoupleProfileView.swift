@@ -20,41 +20,18 @@ struct CoupleProfileView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     GeometryReader { imageGeometry in
-                        // 背景图片
                         if let couple = coupleViewModel.couple {
-                            PhotosPicker(selection: $selectedBackgroundItem, matching: .images) {
-                                if let bgImageURL = couple.bgImg {
-                                    KFImage(URL(string: bgImageURL))
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: geometry.size.width, height: max(0, headerHeight + imageGeometry.frame(in: .global).minY))
-                                        .clipped()
-                                        .offset(y: -imageGeometry.frame(in: .global).minY)
-                                } else {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
-                                        .frame(height: 300)
+                            BackgroundImageView(
+                                bgImageURL: couple.bgImg,
+                                geometry: geometry,
+                                imageGeometry: imageGeometry,
+                                headerHeight: headerHeight,
+                                selectedBackgroundItem: $selectedBackgroundItem,
+                                showConfirmationDialog: $showConfirmationDialog,
+                                onImageSelected: { image in
+                                    selectedBackgroundImage = image
                                 }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .onChange(of: selectedBackgroundItem) { _ in
-                                Task {
-                                    if let data = try? await selectedBackgroundItem?.loadTransferable(type: Data.self) {
-                                        if let uiImage = UIImage(data: data) {
-                                            selectedBackgroundImage = uiImage
-                                            showConfirmationDialog = true
-                                        }
-                                    }
-                                }
-                            }
-                            .confirmationDialog("上传背景图片?", isPresented: $showConfirmationDialog, titleVisibility: .visible) {
-                                Button("确认上传") {
-                                    uploadBackgroundImage()
-                                }
-                                Button("取消", role: .cancel) {
-                                    selectedBackgroundImage = nil
-                                }
-                            }
+                            )
                         }
                     }
                     .frame(height: headerHeight)
@@ -204,5 +181,61 @@ struct ViewOffsetKey: PreferenceKey {
     static var defaultValue = CGFloat.zero
     static func reduce(value: inout Value, nextValue: () -> Value) {
         value += nextValue()
+    }
+}
+
+struct BackgroundImageView: View {
+    let bgImageURL: String?
+    let geometry: GeometryProxy
+    let imageGeometry: GeometryProxy
+    let headerHeight: CGFloat
+    @Binding var selectedBackgroundItem: PhotosPickerItem?
+    @Binding var showConfirmationDialog: Bool
+    let onImageSelected: (UIImage) -> Void
+    
+    var body: some View {
+        PhotosPicker(selection: $selectedBackgroundItem, matching: .images) {
+            if let bgImageURL = bgImageURL {
+                CachedBackgroundImage(
+                    url: bgImageURL,
+                    width: geometry.size.width,
+                    height: max(0, headerHeight + imageGeometry.frame(in: .global).minY),
+                    offsetY: -imageGeometry.frame(in: .global).minY
+                )
+            } else {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 300)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .onChange(of: selectedBackgroundItem) { _ in
+            Task {
+                if let data = try? await selectedBackgroundItem?.loadTransferable(type: Data.self) {
+                    if let uiImage = UIImage(data: data) {
+                        await MainActor.run {
+                            onImageSelected(uiImage)
+                            showConfirmationDialog = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct CachedBackgroundImage: View {
+    let url: String
+    let width: CGFloat
+    let height: CGFloat
+    let offsetY: CGFloat
+    
+    var body: some View {
+        KFImage(URL(string: url))
+            .resizable()
+            .scaledToFill()
+            .frame(width: width, height: height)
+            .clipped()
+            .offset(y: offsetY)
     }
 }

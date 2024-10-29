@@ -4,15 +4,7 @@ struct PostPageView: View {
     @ObservedObject private var postViewModel: PostViewModel
     @ObservedObject private var entitiesViewModel: EntitiesViewModel
     @State private var refreshTask: Task<Void, Never>?
-    @State private var scrollOffset: CGFloat = 0
-    @State private var showHeader: Bool = true
     @State private var topSafeAreaHeight: CGFloat = 0
-    @State private var lastScrollValue: CGFloat = 0
-    @State private var lastScrollTime: Date = Date()
-    @State private var scrollDirection: ScrollDirection = .none
-    @State private var accumulatedScrollDistance: CGFloat = 0
-    @State private var scrollThreshold: CGFloat = 50
-    @State private var postListViewHeight: CGFloat = 0
     
     init(entitiesViewModel: EntitiesViewModel, postViewModel: PostViewModel) {
         self.entitiesViewModel = entitiesViewModel
@@ -21,9 +13,9 @@ struct PostPageView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(alignment: .leading, spacing: 0) {
-                if showHeader {
-                    VStack {
+            ZStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ScrollView {
                         HStack {
                             Text("Infinity")
                                 .font(.title)
@@ -40,86 +32,21 @@ struct PostPageView: View {
                         
                         Divider()
                             .padding(.top, 8)
+                        
+                        PostListView(
+                            postViewModel: postViewModel,
+                            onLastPostAppear: fetchMorePosts
+                        )
                     }
-                    .transition(.move(edge: .top))
+                    .refreshable {
+                        await refreshData()
+                    }
                 }
                 
-                ScrollView {
-                    GeometryReader { geometry in
-                        Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).origin.y)
-                    }
-                    .frame(height: 0)
-
-                    PostListView(
-                        postViewModel: postViewModel,
-                        onLastPostAppear: fetchMorePosts
-                    )
-                    .background(
-                        GeometryReader { geometry -> Color in
-                            DispatchQueue.main.async {
-                                self.postListViewHeight = geometry.size.height
-                            }
-                            return Color.clear
-                        }
-                    )
-                }
-                .coordinateSpace(name: "scroll")
-                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                    let currentTime = Date()
-                    let timeDifference = currentTime.timeIntervalSince(lastScrollTime)
-                    let scrollDelta = value - lastScrollValue
-                    
-                    if timeDifference > 0.1 { // 50毫秒
-                        accumulatedScrollDistance += scrollDelta
-                        
-                        let newDirection: ScrollDirection
-                        if scrollDelta > 0 {
-                            newDirection = .down
-                        } else if scrollDelta < 0 {
-                            newDirection = .up
-                        } else {
-                            newDirection = .none
-                        }
-                        
-                        if newDirection != scrollDirection {
-                            scrollDirection = newDirection
-                            accumulatedScrollDistance = scrollDelta // 重置累积距离
-                        }
-                        
-                        // 使用 PostListView 的实际高度来计算是否接近底部
-                        let isNearBottom = -value > (postListViewHeight - UIScreen.main.bounds.height)
-                        
-                        // 只有当累积滚动距离超过阈值且不在底部附近时才触发头部的显示/隐藏
-                        if abs(accumulatedScrollDistance) > scrollThreshold && !isNearBottom {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                // 如果在顶部或接近顶部，始终显示头部
-                                if value > -10 {
-                                    showHeader = true
-                                } else {
-                                    showHeader = scrollDirection == .down
-                                }
-                            }
-                            accumulatedScrollDistance = 0 // 重置累积距离
-                        }
-                        
-                        lastScrollTime = currentTime
-                        lastScrollValue = value
-                    }
-                }
-                .refreshable {
-                    await refreshData()
-                }
-                .safeAreaInset(edge: .bottom) {
-                    Color.clear.frame(height: 80) // CustomTabView 的高度
-                }
-            }
-            .safeAreaInset(edge: .top) {
-                if !showHeader {
-                    BlurView(style: .regular)
-                        .frame(height: topSafeAreaHeight)
-                        .frame(maxWidth: .infinity)
-                        .offset(y: -topSafeAreaHeight)
-                }
+                BlurView(style: .regular)
+                    .frame(height: topSafeAreaHeight)
+                    .frame(maxWidth: .infinity)
+                    .offset(y: -topSafeAreaHeight)
             }
             .onAppear {
                 topSafeAreaHeight = geometry.safeAreaInsets.top
@@ -136,7 +63,6 @@ struct PostPageView: View {
             .onDisappear {
                 refreshTask?.cancel()
             }
-            .animation(.easeOut(duration: 0.3), value: showHeader)
         }
     }
     
@@ -219,15 +145,4 @@ struct PostListView: View {
             }
         }
     }
-}
-
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value += nextValue()
-    }
-}
-
-enum ScrollDirection {
-    case up, down, none
 }
