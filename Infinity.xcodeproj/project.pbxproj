@@ -35,9 +35,22 @@
 		8AE539722CBCD4560093ECD3 /* Infinity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Infinity.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8A7C979B2CCF95C7008AB3D9 /* Exceptions for "Infinity" folder in "Infinity" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8AD39C972CB53AF80077C358 /* Infinity */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8A52E66F2CBA818200713A56 /* Infinity */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8A7C979B2CCF95C7008AB3D9 /* Exceptions for "Infinity" folder in "Infinity" target */,
+			);
 			path = Infinity;
 			sourceTree = "<group>";
 		};
@@ -306,6 +319,7 @@
 				DEVELOPMENT_TEAM = NR8MGK726G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Infinity/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Infinity;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -337,6 +351,7 @@
 				DEVELOPMENT_TEAM = NR8MGK726G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Infinity/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Infinity;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

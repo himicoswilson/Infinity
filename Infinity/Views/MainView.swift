@@ -73,7 +73,6 @@ struct MainView: View {
                     isLoading = false
                 }
             }
-            coupleViewModel.fetchCoupleInfo()
         } else {
             withAnimation(.easeInOut(duration: 0.5)) {
                 opacity = 1.0
@@ -87,6 +86,7 @@ struct MainView: View {
             print("加载初始数据")
             group.addTask { await entitiesViewModel.fetchEntities() }
             group.addTask { await postViewModel.fetchPosts(refresh: true) }
+            group.addTask { await coupleViewModel.fetchCoupleInfo() }
         }
     }
 

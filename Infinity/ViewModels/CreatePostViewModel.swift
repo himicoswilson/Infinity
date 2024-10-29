@@ -106,6 +106,19 @@ class CreatePostViewModel: ObservableObject {
                     fileFieldName: "images"
                 )
 
+                // 发送通知
+                let notificationBody = content.isEmpty ? 
+                    (selectedImages.isEmpty ? "" : "[图片]") : 
+                    (selectedImages.isEmpty ? content : "\(content)[图片]")
+                NotificationService.shared.sendBarkNotification(
+                    barkToken: UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.loverBarkToken) ?? "",
+                    title: UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.nickName) ?? "有更新啦~",
+                    body: notificationBody,
+                    group: Constants.BarkAPI.defaultGroup,
+                    icon: Constants.BarkAPI.defaultIcon,
+                    scheme: Constants.BarkAPI.defaultScheme
+                )
+
                 self.postCreated = true
                 self.resetState()
                 self.onPostCreated?()

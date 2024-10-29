@@ -6,10 +6,20 @@ struct Constants {
     static let baseURL = "https://love.ytcccc.com/api"
     // static let baseURL = "http://localhost:8080/api"
 
+    struct BarkAPI {
+        static let baseURL = "https://api.day.app"
+        static let defaultGroup = "Infinity"
+        static let defaultIcon = "https://himilove.oss-cn-shanghai.aliyuncs.com/icon/icon-64%403x.png"
+        static let defaultScheme = "infinity://"
+    }
+
     struct UserDefaultsKeys {
         static let token = "token"
         static let userID = "userID"
         static let username = "username"
+        static let nickName = "nickName"
+        static let currentUserBarkToken = "current_user_bark_token"
+        static let loverBarkToken = "lover_bark_token"
     }
     
     struct APIEndpoints {
@@ -34,7 +44,5 @@ struct Constants {
         // 实体相关 API
         static let entities = "\(baseURL)/entities"
         static let updateLastViewed = { (entityId: Int) in "\(baseURL)/entities/\(entityId)/last-viewed" }
-        
-        // 其他 API 端点可以继续添加
     }
 }
