@@ -79,7 +79,7 @@ struct PostPageView: View {
             await entitiesViewModel.fetchEntities()
         }
     }
-
+    
     func onEntitySelected(_ entity: EntityDTO?) {
         if let entity = entity {
             if postViewModel.selectedEntity?.entityID == entity.entityID {
@@ -96,10 +96,10 @@ struct PostPageView: View {
             postViewModel.setCurrentEntity(nil)
         }
     }
-
+    
     private func fetchMorePosts() {
         guard !postViewModel.isLoading else { return }
-
+        
         if postViewModel.isShowingEntityPosts {
             if let entityID = postViewModel.currentEntityID {
                 postViewModel.fetchPostsByEntity(entityId: entityID)
@@ -108,3 +108,4 @@ struct PostPageView: View {
             postViewModel.fetchPosts()
         }
     }
+}
