@@ -44,7 +44,7 @@ struct PostPageView: View {
                         }
                     }
                     
-                    BlurView(style: .regular)
+                    AdaptiveBlurView()
                         .frame(height: topSafeAreaHeight)
                         .frame(maxWidth: .infinity)
                         .offset(y: -topSafeAreaHeight)

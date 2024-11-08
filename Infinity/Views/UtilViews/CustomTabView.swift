@@ -10,6 +10,10 @@ struct CustomTabView<Content: View>: View {
         self._selectedTab = selectedTab
         self.content = content()
         self.showCreatePost = showCreatePost
+
+        // 隐藏tabbar的背景
+        UITabBar.appearance().backgroundImage = UIImage()
+        UITabBar.appearance().shadowImage = UIImage()
     }
     
     var body: some View {
@@ -20,6 +24,10 @@ struct CustomTabView<Content: View>: View {
             .accentColor(colorScheme == .dark ? .white : .black)
             
             customTabBar
+                .background(
+                    AdaptiveBlurView()
+                        .edgesIgnoringSafeArea(.bottom)
+                )
         }
         .edgesIgnoringSafeArea(.bottom)
     }
@@ -27,14 +35,13 @@ struct CustomTabView<Content: View>: View {
     private var customTabBar: some View {
         HStack(spacing: 0) {
             tabButton(imageName: "seal.fill", tab: 0)
-            Spacer()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             createPostButton
-            Spacer()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             tabButton(imageName: "heart.fill", tab: 2)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(.horizontal, 40)
-        .padding(.vertical, 5)
-        .padding(.bottom, 30)
+        .frame(height: 78)
     }
     
     private func tabButton(imageName: String, tab: Int) -> some View {
@@ -42,6 +49,9 @@ struct CustomTabView<Content: View>: View {
             SwiftUI.Image(systemName: imageName)
                 .font(.system(size: 22))
                 .foregroundColor(selectedTab == tab ? (colorScheme == .dark ? .white : .black) : .gray)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .offset(y: -8)
         }
     }
     
@@ -53,6 +63,9 @@ struct CustomTabView<Content: View>: View {
                 .frame(width: 56, height: 40)
                 .background(colorScheme == .dark ? Color.white : Color.black)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .offset(y: -8)
         }
     }
 }
