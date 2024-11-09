@@ -2,10 +2,17 @@ import Foundation
 import CoreLocation
 
 struct Location: Identifiable, Codable {
-    let id: Int
+    let id: Int?
     let latitude: Double
     let longitude: Double
-    let locationName: String?
+    var locationName: String
+    
+    init(id: Int? = nil, latitude: Double, longitude: Double, locationName: String) {
+        self.id = id
+        self.latitude = latitude
+        self.longitude = longitude
+        self.locationName = locationName
+    }
     
     enum CodingKeys: String, CodingKey {
         case id = "LocationID"

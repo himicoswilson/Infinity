@@ -9,6 +9,7 @@ class CreatePostViewModel: ObservableObject {
     @Published var entities: [Entity] = []
     @Published var selectedEntities: Set<Int> = []
     @Published var isAllSelected: Bool = false
+    @Published var selectedLocation: Location?
     @Published var errorMessage: String?
     @Published var isLoading: Bool = false
     @Published var postCreated: Bool = false
@@ -80,6 +81,11 @@ class CreatePostViewModel: ObservableObject {
             
             do {
                 let entitiesData = selectedEntities.map { ["entityID": $0] }
+                let locationData: [String: Any]? = selectedLocation.map { [
+                    "latitude": $0.latitude,
+                    "longitude": $0.longitude,
+                    "locationName": $0.locationName
+                ] }
 
                 var files: [String: Data] = [:]
                 let fileNames: [String: String] = [:]
@@ -91,10 +97,14 @@ class CreatePostViewModel: ObservableObject {
                     }
                 }
                 
-                let parameters: [String: Any] = [
+                var parameters: [String: Any] = [
                     "content": content,
                     "entities": entitiesData
                 ]
+                
+                if let locationData = locationData {
+                    parameters["location"] = locationData
+                }
                 
                 let _: EmptyResponse = try await APIService.shared.upload(
                     Constants.APIEndpoints.posts,

@@ -13,6 +13,7 @@ struct PostDTO: Identifiable, Codable {
     let locationID: Int?
     let createdAt: String
     let updatedAt: String
+    let location: [LocationDTO]
     let images: [ImageDTO]
     let tags: [TagDTO]
     let entities: [EntityDTO]
