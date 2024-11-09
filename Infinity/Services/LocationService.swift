@@ -6,7 +6,7 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var currentLocation: CLLocation?
     
-    private override init() {
+    override init() {
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -25,6 +25,7 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        print("位置更新：\(String(describing: locations.last?.coordinate))")
         currentLocation = locations.last
     }
 }

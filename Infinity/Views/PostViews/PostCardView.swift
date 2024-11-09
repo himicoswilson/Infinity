@@ -7,6 +7,7 @@ struct PostCardView: View {
     @State private var showImagePreview = false
     @State private var previewCurrentPage = 0
     @State private var showCreateCommentView = false
+    @State private var showLocationMap = false
     
     init(postdto: PostDTO) {
         self.postdto = postdto
@@ -93,22 +94,44 @@ struct PostCardView: View {
             }
 
             // 评论按钮
-            Button(action: {
-                let impact = UIImpactFeedbackGenerator(style: .light)
-                impact.impactOccurred()
-                showCreateCommentView = true
-            }) {
-                HStack {
-                    SwiftUI.Image(systemName: "bubble.right")
-                        .font(.system(size: 12))
-                    Text("评论")
-                        .font(.footnote)
+            HStack(spacing: 10) {
+                // 评论按钮
+                Button(action: {
+                    let impact = UIImpactFeedbackGenerator(style: .light)
+                    impact.impactOccurred()
+                    showCreateCommentView = true
+                }) {
+                    HStack {
+                        SwiftUI.Image(systemName: "bubble.right")
+                            .font(.system(size: 12))
+                        Text("评论")
+                            .font(.footnote)
+                    }
+                    .foregroundColor(.gray)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 10)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(15)
                 }
-                .foregroundColor(.gray)
-                .padding(.vertical, 5)
-                .padding(.horizontal, 10)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(15)
+                
+                // 位置按钮
+                if !postdto.location.isEmpty {
+                    Button(action: {
+                        showLocationMap = true
+                    }) {
+                        HStack {
+                            SwiftUI.Image(systemName: "map")
+                                .font(.system(size: 12))
+                            Text(postdto.location[0].locationName)
+                                .font(.footnote)
+                        }
+                        .foregroundColor(.gray)
+                        .padding(.vertical, 5)
+                        .padding(.horizontal, 10)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(15)
+                    }
+                }
             }
             .padding(.leading, 60)
             .padding(.vertical, 5)
@@ -126,6 +149,15 @@ struct PostCardView: View {
         .sheet(isPresented: $showCreateCommentView) {
             CreateCommentView(postdto: postdto, showCreateCommentView: $showCreateCommentView, onCommentCreated: commentsManager.addComment)
         }
+        // .sheet(isPresented: $showLocationMap) {
+        //     let location = Location(
+        //         id: postdto.location[0].id,
+        //         latitude: postdto.location[0].latitude,
+        //         longitude: postdto.location[0].longitude,
+        //         locationName: postdto.location[0].locationName
+        //     )
+        //     MapView(selectedLocation: .constant(location))
+        // }
         .environmentObject(commentsManager)
         .onAppear {
             commentsManager.comments = postdto.comments

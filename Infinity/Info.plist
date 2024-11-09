@@ -17,5 +17,9 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>需要访问您的位置来显示地图和附近的地点</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>需要访问您的位置来显示地图和附近的地点</string>
 </dict>
 </plist>

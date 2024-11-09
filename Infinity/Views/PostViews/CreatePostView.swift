@@ -12,6 +12,8 @@ struct CreatePostView: View {
     @FocusState private var focusedField: Bool
     @State private var showCreateEntityView = false
     @Environment(\.colorScheme) var colorScheme
+    @State private var showMapView = false
+    @State private var showingMapView = false
 
     init(showCreatePost: Binding<Bool>, entitiesViewModel: EntitiesViewModel, onPostCreated: @escaping () -> Void) {
         _showCreatePost = showCreatePost
@@ -145,6 +147,63 @@ struct CreatePostView: View {
                     .padding(.horizontal, -16)
                 }
                 .padding(.horizontal)
+                
+                Divider()
+                    .padding()
+                
+                // 位置选择部分
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("位置信息")
+                        .font(.headline)
+                    
+                    Button(action: {
+                        showMapView = true
+                    }) {
+                        if let location = viewModel.selectedLocation {
+                            // 已选择位置时的显示
+                            HStack {
+                                SwiftUI.Image(systemName: "mappin.circle.fill")
+                                    .foregroundColor(.red)
+                                    .frame(width: 20)
+                                TextField("输入位置名称", text: Binding(
+                                    get: { location.locationName },
+                                    set: { newValue in
+                                        viewModel.selectedLocation?.locationName = newValue
+                                    }
+                                ))
+                                .multilineTextAlignment(.leading)
+                                Spacer()
+                                SwiftUI.Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.primary)
+                            }
+                        } else {
+                            // 未选择位置时的显示
+                            HStack {
+                                SwiftUI.Image(systemName: "mappin.circle.fill")
+                                    .foregroundColor(.red)
+                                    .frame(width: 20)
+                                Text("添加位置")
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                SwiftUI.Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(10)
+                    .contentShape(Rectangle())
+                }
+                .padding(.horizontal)
+                .sheet(isPresented: $showMapView) {
+                    MapView(selectedLocation: Binding(
+                        get: { viewModel.selectedLocation },
+                        set: { viewModel.selectedLocation = $0 }
+                    ))
+                }
             }
             .onReceive(entitiesViewModel.$entities) { newEntities in
                 viewModel.refreshEntities(newEntities)
