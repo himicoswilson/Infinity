@@ -7,7 +7,7 @@ struct PostCardView: View {
     @State private var showImagePreview = false
     @State private var previewCurrentPage = 0
     @State private var showCreateCommentView = false
-    @State private var showLocationMap = false
+    @State private var showPostMap = false
     
     init(postdto: PostDTO) {
         self.postdto = postdto
@@ -117,7 +117,7 @@ struct PostCardView: View {
                 // 位置按钮
                 if !postdto.location.isEmpty {
                     Button(action: {
-                        showLocationMap = true
+                        showPostMap = true
                     }) {
                         HStack {
                             SwiftUI.Image(systemName: "map")
@@ -149,15 +149,9 @@ struct PostCardView: View {
         .sheet(isPresented: $showCreateCommentView) {
             CreateCommentView(postdto: postdto, showCreateCommentView: $showCreateCommentView, onCommentCreated: commentsManager.addComment)
         }
-        // .sheet(isPresented: $showLocationMap) {
-        //     let location = Location(
-        //         id: postdto.location[0].id,
-        //         latitude: postdto.location[0].latitude,
-        //         longitude: postdto.location[0].longitude,
-        //         locationName: postdto.location[0].locationName
-        //     )
-        //     MapView(selectedLocation: .constant(location))
-        // }
+        .fullScreenCover(isPresented: $showPostMap) {
+            PostMapView(post: postdto)
+        }
         .environmentObject(commentsManager)
         .onAppear {
             commentsManager.comments = postdto.comments
