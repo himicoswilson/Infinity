@@ -44,5 +44,8 @@ struct Constants {
         // 实体相关 API
         static let entities = "\(baseURL)/entities"
         static let updateLastViewed = { (entityId: Int) in "\(baseURL)/entities/\(entityId)/last-viewed" }
+
+        // 位置相关 API
+        static let postsNearby = "\(baseURL)/posts/nearby"
     }
 }
