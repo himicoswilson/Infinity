@@ -3,7 +3,7 @@ struct Constants {
     static let appVersion = "1.0.0"
     
     // 定义基础 URL
-    static let baseURL = "https://love.ytcccc.com/api"
+    static let baseURL = "https://love.himicos.com/api"
     // static let baseURL = "http://localhost:8080/api"
 
     struct BarkAPI {
